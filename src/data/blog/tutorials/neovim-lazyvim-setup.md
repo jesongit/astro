@@ -1,6 +1,7 @@
 ---
 author: Posase
 pubDatetime: 2024-08-16T09:54:24Z
+modDatetime: 2026-04-12T00:00:00Z
 title: "Neovim + LazyVim 快速上手"
 draft: false
 tags:
@@ -24,7 +25,8 @@ scoop bucket add nerd-fonts
 scoop install gcc ripgrep lazygit FiraCode-NF-Mono neovim fd
 
 # linux example: debian
-apt install lazygit ripgrep unzip
+apt install -y git lazygit gcc make build-essential nodejs npm ripgrep fd-find fzf unzip
+npm install -g tree-sitter-cli
 
 curl -LO https://github.com/neovim/neovim/releases/latest/download/nvim-linux64.tar.gz
 sudo rm -rf /opt/nvim
@@ -34,6 +36,8 @@ source ~/.bashrc
 ```
 
 > 注意将`Nerd Fonts`系列字体设置为终端字体才能正常显示图标
+>
+> Linux 上可手动安装 Nerd Fonts 字体：下载字体文件到 `~/.local/share/fonts`，然后执行 `fc-cache -fv` 刷新字体缓存
 
 ## 安装lazyvim
 
@@ -59,6 +63,7 @@ local opt = vim.opt
 opt.spelllang = { "en", "cjk" } -- 设置拼写检查，防止中文提示拼写错误
 opt.shiftwidth = 4              -- 修改默认缩进
 opt.tabstop = 4
+opt.softtabstop = 4             -- 软 Tab 宽度
 ```
 
 ## 常用快捷键
@@ -123,6 +128,18 @@ Add-Content -Path lua/config/options.lua -Value $optinos -Encoding UTF8
 
 # 启动 neovim 会自动安装 lazyvim
 nvim
+```
+
+## Erlang LSP 配置
+
+在 Erlang Shell 中执行 `filename:basedir(user_config, "erlang_ls").` 可查看配置文件位置，更多信息参考 [erlang_ls 配置文档](https://erlang-ls.github.io/configuration/)。
+
+创建 `erlang_ls.config`：
+
+```yaml
+providers:
+  disabled:
+    - document-formatting # 关闭自动格式化
 ```
 
 ## 参考

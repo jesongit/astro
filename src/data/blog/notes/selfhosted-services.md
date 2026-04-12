@@ -50,3 +50,9 @@ description: "自建服务推荐清单，涵盖影音、下载、网盘、监控
 | 音乐 | MusicBrainz Picard | https://picard.musicbrainz.org/ | 音乐标签填充神器 |
 | 音乐 | 音乐标签 | https://www.cnblogs.com/vinlxc/p/11347744.html | 音乐繁体转简体+歌词查找 |
 
+## 异星探险者（Astroneer）服务器
+
+- 服务器配置中，公网 IP 填写正常连接的公网 IP（比如提供内网穿透的服务器）
+- 默认端口是 7777 并且使用 UDP 连接，搭内网穿透时需要注意，另外记得打开防火墙
+- 官方启动器非常难用，没有任何日志和界面，推荐 [AstroLauncher](https://github.com/ricky-davis/AstroLauncher)
+

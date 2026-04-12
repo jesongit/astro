@@ -85,6 +85,20 @@ docker run -d --restart=always -v ./alist:/opt/alist/data -v /disk:/disk -p 3524
 docker run -d --name portainer -p 9000:9000 --restart=always -v /var/run/docker.sock:/var/run/docker.sock 6053537/portainer-ce
 ```
 
+## Docker 容器时区设置
+
+```dockerfile
+FROM alpine:latest
+
+# 安装 tzdata 并保留
+RUN apk update && apk add --no-cache tzdata
+
+# 设置时区环境变量
+ENV TZ=Asia/Shanghai
+```
+
+> 对于已运行的容器，也可以通过 `-e TZ=Asia/Shanghai` 环境变量设置时区。
+
 ## 常见问题
 
 ### init 3 后只有光标

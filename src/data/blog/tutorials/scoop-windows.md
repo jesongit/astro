@@ -129,6 +129,22 @@ scoop bucket add scoopet 'https://hub.fgit.ml/ivaquero/scoopet'
 
 > 更多请参考 [fastgit](http://fgit.ml/)
 
+## 代理设置
+
+某些软件不会自动走系统代理，可以在 CMD 或 PowerShell 中设置环境变量后再启动程序。
+
+**CMD：**
+```cmd
+set HTTP_PROXY=http://127.0.0.1:7890
+set HTTPS_PROXY=http://127.0.0.1:7890
+```
+
+**PowerShell：**
+```powershell
+$env:HTTP_PROXY="http://127.0.0.1:7890"
+$env:HTTPS_PROXY="http://127.0.0.1:7890"
+```
+
 ## 其他问题 
 
 ### 安装旧版本 `MySQL`

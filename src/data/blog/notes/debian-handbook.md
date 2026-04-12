@@ -1,7 +1,7 @@
 ---
 author: Posase
 pubDatetime: 2023-04-08T07:00:28Z
-title: "Debian 折腾手册"
+title: "Debian 服务器配置笔记"
 draft: false
 tags:
   - Linux
@@ -9,11 +9,12 @@ tags:
   - Docker
   - Linux运维
   - 学习笔记
-description: "Debian 服务器常用配置速查，包含 APT 源替换、SSH 免密登录、Docker 服务部署等"
+modDatetime: 2026-04-12T00:00:00Z
+description: "Debian 服务器常用配置笔记，涵盖 APT 源替换、SSH 配置、Docker 服务部署和常见问题处理"
 ---
 
 
-## 常用指令
+## APT 源替换
 ```bash
 # debian 11 替换 apt 源
 echo "deb https://mirrors.aliyun.com/debian/ bullseye main non-free contrib
@@ -83,3 +84,11 @@ docker run -d --restart=always -v ./alist:/opt/alist/data -v /disk:/disk -p 3524
 # Portainer 中文版 还有个 -v xxx:/data 没导出
 docker run -d --name portainer -p 9000:9000 --restart=always -v /var/run/docker.sock:/var/run/docker.sock 6053537/portainer-ce
 ```
+
+## 常见问题
+
+### init 3 后只有光标
+
+进入 `init 3` 多用户命令行模式后，屏幕只显示光标无法操作。
+
+按 `Ctrl+Alt+F2`/`F3`/`F4` 切换到其他 TTY 即可进入终端。

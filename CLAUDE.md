@@ -33,7 +33,11 @@ npm run lint      # Lint with eslint
 ```
 
 ## Key Conventions
-- Blog articles are in `src/data/blog/` as `.md` files
+- Blog articles are in `src/data/blog/` as `.md` files, organized into subdirectories:
+  - `tutorials/` — 部署教程、入门指南
+  - `notes/` — 学习笔记、速查手册
+  - `leetcode/` — LeetCode 题解
+  - `_drafts/` — 草稿（被 glob pattern `[^_]*.md` 排除，不会发布）
 - Frontmatter schema is defined in `src/content.config.ts`
 - Tags should follow the standardized list in `BLOG_STYLE_GUIDE.md`
 - Description must NOT duplicate the title
@@ -42,3 +46,8 @@ npm run lint      # Lint with eslint
 - Draft articles use `draft: true` in frontmatter
 - Articles marked with `<!-- [建议删除] -->` are candidates for removal
 - Articles marked with `<!-- [建议补充] -->` need more content before publishing
+
+## Git 操作规则
+- **Git 提交和推送必须经过用户手动确认后才能执行**
+- 不要自动执行 `git commit` 或 `git push`，先向用户展示变更内容并等待确认
+- Remote: `git@github.com:jesongit/astro.git`，分支: `main`

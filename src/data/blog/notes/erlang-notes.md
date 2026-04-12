@@ -1,7 +1,7 @@
 ---
 author: Posase
 pubDatetime: 2023-03-25T17:21:24Z
-modDatetime: 2023-12-22T15:47:44Z
+modDatetime: 2026-04-12T00:00:00Z
 title: "Erlang 学习笔记"
 draft: false
 tags:
@@ -222,7 +222,7 @@ bnot                % 按位非
 
 在计算结构中元素个数时候，如果是常量时间内就能得到结果的则命名为`size`，如果是线性时间内得到结果的命名为`length`。例如：`tuple_size`, `byte_size`; `length`, `String.length`
 
-> 参考自 [Elixir 笔记](./%E3%80%8C%E7%AC%94%E8%AE%B0%E3%80%8DElixir-%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0.md)
+> 参考自 [Elixir 学习笔记](/posts/elixir-notes)
 
 ```erlang
 %% 其中的值可以是任意类型
@@ -829,3 +829,111 @@ start() ->
     spawn(?MODULE, box, [[]]).
 ```
 在 `Shell` 中可以使用 `box:start().` 启动盒子进程，使用 `box:add/2` 添加物品，`box:del/2` 删除物品
+
+## 编译
+
+### 在 Shell 中
+```bash
+erlc test.erl
+```
+
+### 在 Erlang Shell 中
+
+```erlang
+c(test).
+compile:file(test).
+
+%% 使用 hipe 编译成本地码会更快
+hipe:c(Module, Opts).  %% 或者 c(Module, [native]).
+
+%% 都可以添加一些选项
+%% debug_info: 一些 debug 工具
+%% {outdir, Dir}: 自定义编译后的文件目录
+%% export_all: 导出文件的所有函数
+%% {d, Key, Value}: 定义一个宏，其中 Key 是个原子，Value 如果没有定义默认是 true
+compile:file(test, [debug_info]).
+c(test, [debug_info, {outdir, ebin}, export_all, {d,key,value}]).
+
+%% 也可以直接在模块中定义
+-compile([debug_info, export_all]).
+```
+
+## 宏
+
+```erlang
+%% 检查预定义的宏
+-ifdef(key).
+    test() -> ok.
+-else.
+    do something..
+-endif.
+```
+
+| 宏 | 含义 |
+| --- | --- |
+| `?MODULE` | 模块名 |
+| `?FILE` | 文件名 |
+| `?FUNCTION_NAME` | 函数名 |
+| `?LINE` | 行号 |
+
+## TCP/UDP 网络编程
+
+```erlang
+loop(Socket) ->
+    receive
+        {udp, Socket, Port, Data} ->
+            io:format("received udp Port: ~p Data: ~p~n", [Port, Data]),
+            loop(Socket);
+        {tcp, Socket, Data} ->
+            io:format("received tcp Data: ~p~n", [Data]),
+            gen_tcp:send(Socket, Data),
+            loop(Socket);
+        Msg ->
+            io:format("Unknow Msg ~p~n", [Msg]),
+            loop(Socket)
+    end.
+
+udp(Port) ->
+    {ok,Socket} = gen_udp:open(Port, [binary]),
+    io:format("udp open Port: ~p Socket ~p~n", [Port, Socket]),
+    loop(Socket).
+
+tcp(Port) ->
+    {ok, Listen} = gen_tcp:listen(Port, [binary, {packet, 0}, {active, true}]),
+    io:format("get listen success ~p~n", [Listen]),
+    {ok, Socket} = gen_tcp:accept(Listen),
+    io:format("tcp accept Port: ~p Socket ~p~n", [Port, Socket]),
+    loop(Socket).
+
+% server opened socket: #Port<0.491> Port: 9
+% server received:{udp,#Port<0.491>,{192,168,20,21},60406,<<"hello\n">>}
+```
+
+## 分布式节点
+
+```bash
+# 创建 3 个节点
+erl -sname a
+erl -sname b
+erl -sname c
+```
+```erlang
+
+% 同 cookie 才可以连接
+net_adm:ping(<node>). % pong 成功 pang 失败
+
+% Cookie 设置
+erlang:set_cookie().
+erlang:get_cookie().
+
+% 查看本节点名，查看已连接节点
+node().
+nodes().
+
+% 订阅节点
+net_kernel:monitor_nodes(?true, [{node_type, all}, nodedown_reason])
+
+% 远程调用
+rpc:call(node,mod,fun,args).
+rpc:cast(node,mod,fun,args).
+```

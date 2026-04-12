@@ -1,14 +1,15 @@
 ---
 author: Posase
 pubDatetime: 2023-04-08T07:53:10Z
-title: "PVE 折腾手册"
+modDatetime: 2026-04-12T00:00:00Z
+title: "PVE 虚拟化平台配置笔记"
 draft: false
 tags:
   - PVE
   - Linux
   - Linux运维
   - 学习笔记
-description: "PVE 虚拟化平台折腾记录，包含 iKuai、Debian 等虚拟机的安装和配置"
+description: "PVE 虚拟化平台使用笔记，涵盖虚拟机安装、磁盘管理、ESXi 配置和常见问题处理"
 ---
 
 
@@ -52,3 +53,48 @@ systemctl start docker
 ## `PVE` 设置脚本
 `wget -q -O /root/pve_source.tar.gz 'https://bbs.x86pi.cn/file/topic/2023-11-28/file/01ac88d7d2b840cb88c15cb5e19d4305b2.gz' && tar zxvf /root/pve_source.tar.gz && /root/./pve_source`
 > [来源](https://bbs.x86pi.cn/thread?topicId=20) 疑似 `lxc` 源有问题
+
+## ESXi 相关
+
+### VMFSL 分区占用问题
+
+安装 ESXi 时会出现倒数 5 秒的界面，按下 `Shift + O` 输入以下内容回车即可限制 VMFSL 分区大小：
+
+```bash
+autoPartitionOSDataSize=51200
+```
+
+> 单位为 MB，上述示例为 50 GB
+
+### 精简置备和厚置备
+
+- **精简置备**：使用多少分配多少，占用空间根据使用情况决定，最大占用空间略大于设置值。设置的是系统内最大使用空间而非真实占用空间，需要定期回收空间
+- **厚置备**：分配多少用多少，一开始就把空间全部占用，最大使用空间等于设置值
+  - **延迟置零**：在使用时写入 0
+  - **置零**：在创建时就写入 0
+
+### 安装 Debian 11 显示硬件架构问题
+
+在 ESXi 上安装 Debian 11 时，如果选择了 163 镜像源可能会遇到硬件架构问题。解决方法是换用 [中科大源](http://mirrors.ustc.edu.cn/)。
+
+### 安装 OpenWrt
+
+1. `img` 镜像需要转换为 `vmdk` 格式
+2. 在添加硬盘的地方选择转换后的镜像文件
+3. 修改引导方式：`EFI` → `BIOS`
+
+### SSH 连接问题
+
+#### 允许 root 登录
+
+修改 `/etc/ssh/sshd_config`，设置 `PermitRootLogin yes`，然后重启 SSH 服务。
+
+#### 远程主机标识变更
+
+当重装系统或更换主机后，SSH 连接可能报错 `REMOTE HOST IDENTIFICATION HAS CHANGED`，使用以下命令清除旧的 host key：
+
+```bash
+ssh-keygen -R xx.xx.xx.xx
+```
+
+清除后重新连接即可。

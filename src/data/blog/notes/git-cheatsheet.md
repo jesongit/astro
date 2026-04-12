@@ -225,3 +225,17 @@ bin/
 !test
 ```
 > [Github 语言分类示例](https://github.com/github/gitignore)
+
+## 代理设置
+
+使用 Clash 等代理工具时，如果 Git 无法正常访问远程仓库，可以配置 HTTP/HTTPS 代理：
+
+```bash
+# 设置代理（以 Clash 默认端口 7890 为例）
+git config --global http.proxy http://127.0.0.1:7890
+git config --global https.proxy http://127.0.0.1:7890
+
+# 取消代理
+git config --global --unset http.proxy
+git config --global --unset https.proxy
+```

@@ -31,7 +31,7 @@ const datetime = dayjs(isModified ? modDatetime : pubDatetime).tz(
   postTimezone || SITE.timezone
 );
 
-const date = datetime.format("D MMM, YYYY"); // e.g., '22 Mar, 2025'
+const date = datetime.format("YYYY 年 M 月 D 日"); // e.g., '2025 年 3 月 22 日'
 ---
 
 <div class:list={["flex items-center gap-x-2 opacity-80", className]}>

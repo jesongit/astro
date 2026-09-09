@@ -39,3 +39,4 @@ playwright-report/
 vt-out.txt
 vitest-final.txt
 build-out.txt
+*.log 

@@ -22,6 +22,7 @@ export default [
     ignores: [
       "dist/**",
       ".astro",
+      ".wrangler/**",
       "public/pagefind/**",
       "workers/**",
       "tests/e2e/**",

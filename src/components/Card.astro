@@ -1,12 +1,23 @@
 ---
-import type { CollectionEntry } from "astro:content";
 import { slugifyStr } from "@/utils/slugify";
 import { getPath } from "@/utils/getPath";
 import Datetime from "./Datetime.astro";
 
+/**
+ * 结构化最小 props:既接受 CollectionEntry<"blog">(静态页),
+ * 也接受构建期文章快照 PostSnapshot(SSR 首页,日期为 ISO 字符串)。
+ */
 type Props = {
   variant?: "h2" | "h3";
-} & CollectionEntry<"blog">;
+  id: string;
+  filePath?: string;
+  data: {
+    title: string;
+    description: string;
+    pubDatetime: string | Date;
+    modDatetime?: string | Date | null;
+  };
+};
 
 const { variant: Heading = "h2", id, data, filePath } = Astro.props;
 

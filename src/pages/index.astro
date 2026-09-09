@@ -5,7 +5,6 @@
  * → 最新文章(4 篇,复用 Content Layer 构建快照 + postFilter)→ 置顶文章入口。
  * 精选为空不显示空框;作品服务不可用时保留文章区并给出简短状态。
  */
-import { getCollection } from "astro:content";
 import Layout from "@/layouts/Layout.astro";
 import Header from "@/components/Header.astro";
 import Footer from "@/components/Footer.astro";
@@ -13,8 +12,8 @@ import Socials from "@/components/Socials.astro";
 import LinkButton from "@/components/LinkButton.astro";
 import Card from "@/components/Card.astro";
 import ProjectGrid from "@/components/portfolio/ProjectGrid.astro";
-import getSortedPosts from "@/utils/getSortedPosts";
 import { listPublicProjects } from "@/lib/portfolio/view";
+import type { PostSnapshot } from "@/utils/postsSnapshot";
 import IconRss from "@/assets/icons/IconRss.svg";
 import IconArrowRight from "@/assets/icons/IconArrowRight.svg";
 import { SITE } from "@/config";
@@ -22,8 +21,22 @@ import { SOCIALS } from "@/constants";
 
 export const prerender = false;
 
-const posts = await getCollection("blog");
-const sortedPosts = getSortedPosts(posts);
+/**
+ * 文章区数据来自构建期快照(计划 §11.1):workerd 不能加载 astro:content,
+ * 经 Pages ASSETS binding 读取预渲染 JSON;本地 dev 无 runtime 则直接回源取。
+ * 快照已过 postFilter 并按时间排序(见 /snapshots/latest-posts.json)。
+ */
+const assets = (
+  Astro.locals.runtime?.env as
+    | { ASSETS?: { fetch: (request: Request) => Promise<Response> } }
+    | undefined
+)?.ASSETS;
+const snapshotUrl = new URL("/snapshots/latest-posts.json", Astro.url);
+const snapshotResponse = assets
+  ? await assets.fetch(new Request(snapshotUrl))
+  : await fetch(snapshotUrl);
+const sortedPosts: PostSnapshot[] = await snapshotResponse.json();
+
 const featuredPosts = sortedPosts.filter(({ data }) => data.featured);
 const recentPosts = sortedPosts.filter(({ data }) => !data.featured);
 

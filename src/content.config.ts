@@ -1,8 +1,7 @@
 import { defineCollection, z } from "astro:content";
 import { glob } from "astro/loaders";
 import { SITE } from "@/config";
-
-export const BLOG_PATH = "src/data/blog";
+import { BLOG_PATH } from "@/utils/blogPath";
 
 const blog = defineCollection({
   // 注:文件名 glob 无法排除 _drafts/ 的后代,_drafts 排除由

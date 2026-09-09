@@ -90,7 +90,12 @@ describe("batch admin settings route", () => {
     );
 
     expect(response.status).toBe(200);
-    expect((await response.json()).committed).toBe(true);
+    const body = await response.json();
+    expect(body.committed).toBe(true);
+    expect(body.settings).toMatchObject({
+      "101": { visible: true, order: 2 },
+      "202": { featured: true },
+    });
     expect(fetchImpl).toHaveBeenCalledTimes(4);
     expect(
       fetchImpl.mock.calls.filter(([, init]) => init?.method === "PUT")

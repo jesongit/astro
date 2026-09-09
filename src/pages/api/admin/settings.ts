@@ -148,6 +148,7 @@ export const POST: APIRoute = async context => {
       unchangedRepoIds: saved.unchangedRepoIds,
       sha: saved.sha,
       commitSha: saved.commitSha,
+      settings: saved.settings,
       revisions: saved.revisions,
     });
   } catch (error) {

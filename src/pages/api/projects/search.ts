@@ -1,7 +1,7 @@
 import type { APIRoute } from "astro";
 import { LIMITS } from "@/lib/portfolio/config";
 import { isValidQuery, searchProjects } from "@/lib/portfolio/search";
-import { listPublicProjects } from "@/lib/portfolio/view";
+import { listPublicProjectSearchRecords } from "@/lib/portfolio/view";
 
 export const prerender = false;
 
@@ -18,22 +18,25 @@ export const GET: APIRoute = async ({ locals, url }) => {
   if (!isValidQuery(q)) {
     return new Response(JSON.stringify({ query: q, results: [] }), {
       status: 200,
-      headers: { "Content-Type": "application/json; charset=utf-8" },
+      headers: {
+        "Content-Type": "application/json; charset=utf-8",
+        "Cache-Control": "no-store",
+      },
     });
   }
 
-  const projects = await listPublicProjects(locals as never);
-  const records = projects.map((p, index) => ({
+  const projects = await listPublicProjectSearchRecords(locals as never);
+  const records = projects.map(({ project: p, bodyTextPlain }, index) => ({
     slug: p.slug,
     href: `/projects/${p.slug}/`,
     title: p.title,
     summary: p.summary,
     topics: p.topics,
     techStack: p.techStack,
-    bodyText: (p.bodyHtml ?? "").slice(0, 4000),
-    order: index, // listPublicProjects 已按人工 order 升序;同分保持该顺序
+    bodyText: bodyTextPlain.slice(0, 4000),
+    order: index, // snapshot view 已按人工 order 升序;同分保持该顺序
   }));
-  // 人工顺序:view.listPublicProjects 已按 order 升序返回,搜索同分按该顺序稳定排序
+  // 人工顺序:view 已按 order 升序返回,搜索同分按该顺序稳定排序
   const results = searchProjects(records, q).map(r => ({
     slug: r.slug,
     href: r.href,
@@ -44,6 +47,9 @@ export const GET: APIRoute = async ({ locals, url }) => {
 
   return new Response(JSON.stringify({ query: q, results }), {
     status: 200,
-    headers: { "Content-Type": "application/json; charset=utf-8" },
+    headers: {
+      "Content-Type": "application/json; charset=utf-8",
+      "Cache-Control": "no-store",
+    },
   });
 };

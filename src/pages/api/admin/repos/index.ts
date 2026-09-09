@@ -1,6 +1,14 @@
 import type { APIRoute } from "astro";
-import { adminRuntime, jsonOk, notConfigured } from "@/lib/admin/api";
-import type { DisplaySettings, SourceObservation } from "@/lib/portfolio/types";
+import {
+  adminIntegrationError,
+  adminRuntime,
+  adminSettings,
+  jsonError,
+  jsonOk,
+  notConfigured,
+} from "@/lib/admin/api";
+import type { SourceObservation } from "@/lib/portfolio/types";
+import { settingsEntry, settingsRevision } from "@/lib/admin/settings";
 
 export const prerender = false;
 
@@ -17,6 +25,7 @@ interface RepoSummary {
   lastPublicVerifiedAt: string | null;
   lastContentSuccessAt: string | null;
   warnings: string[];
+  revision: string;
 }
 
 /**
@@ -46,13 +55,19 @@ export const GET: APIRoute = async context => {
   const pageSize = 100;
   const all: RepoSummary[] = [];
   const repoIds = inventory.repos.map(entry => entry.repoId);
-  const [settingsByRepo, observationsByRepo] = await Promise.all([
-    runtime.control.getSettingsMany(repoIds),
-    runtime.cache.getLatestObservations(repoIds),
-  ]);
+  const backend = adminSettings(runtime);
+  if (!backend) {
+    return jsonError(503, "settings_unconfigured", "GitHub 设置存储未配置。");
+  }
+  let settingsSnapshot;
+  try {
+    settingsSnapshot = await backend.read();
+  } catch (error) {
+    return adminIntegrationError(error);
+  }
+  const observationsByRepo = await runtime.cache.getLatestObservations(repoIds);
   for (const entry of inventory.repos) {
-    const settings: DisplaySettings | null =
-      settingsByRepo[entry.repoId] ?? null;
+    const settings = settingsEntry(settingsSnapshot, entry.repoId);
     const observation: SourceObservation | null =
       observationsByRepo.get(entry.repoId) ?? null;
     all.push({
@@ -68,6 +83,7 @@ export const GET: APIRoute = async context => {
       lastPublicVerifiedAt: observation?.lastPublicVerifiedAt ?? null,
       lastContentSuccessAt: observation?.lastContentSuccessAt ?? null,
       warnings: observation?.warnings ?? [],
+      revision: settingsRevision(settingsSnapshot, entry.repoId),
     });
   }
 
@@ -101,5 +117,7 @@ export const GET: APIRoute = async context => {
     cursor: nextCursor,
     inventoryComplete: inventory.completed,
     inventoryObservedAt: inventory.observedAt,
+    settingsSource: settingsSnapshot.source,
+    settingsSha: settingsSnapshot.sha,
   });
 };

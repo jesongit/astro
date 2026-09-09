@@ -3,6 +3,10 @@
  * 读取路径统一经过发布门禁;KV 不可用时返回空集(页面显示空状态)。
  */
 import { ControlStore, PublicCacheStore, type PortfolioKV } from "./store";
+import {
+  comparePortfolioPriority,
+  normalizeDisplaySettings,
+} from "./data-model";
 import { evaluatePublication, toPublicProject } from "./publication";
 import { projectIdFromSlug } from "./slug";
 import { ADMIN } from "./config";
@@ -36,10 +40,16 @@ function storesFrom(locals: LocalsLike | undefined): {
 const byManualOrder = (
   a: DisplaySettingsLike,
   b: DisplaySettingsLike
-): number => a.order - b.order || Number(a.repoId) - Number(b.repoId);
+): number =>
+  comparePortfolioPriority(
+    normalizeDisplaySettings(a.repoId, a),
+    normalizeDisplaySettings(b.repoId, b)
+  );
 
 interface DisplaySettingsLike {
   repoId: string;
+  visible: boolean;
+  featured: boolean;
   order: number;
 }
 

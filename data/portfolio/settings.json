@@ -3,46 +3,46 @@
   "schemaVersion": 1,
   "settings": [
     {
-      "repoId": "1316796247",
-      "visible": true,
+      "acknowledgedIncidentId": null,
       "featured": true,
       "order": 1,
-      "acknowledgedIncidentId": null
+      "repoId": "1316796247",
+      "visible": true
     },
     {
+      "acknowledgedIncidentId": null,
+      "featured": false,
+      "order": 1000,
       "repoId": "1333737554",
-      "visible": true,
-      "featured": false,
-      "order": 1000,
-      "acknowledgedIncidentId": null
+      "visible": true
     },
     {
+      "acknowledgedIncidentId": null,
+      "featured": false,
+      "order": 1000,
       "repoId": "1333974947",
-      "visible": true,
-      "featured": false,
-      "order": 1000,
-      "acknowledgedIncidentId": null
+      "visible": true
     },
     {
+      "acknowledgedIncidentId": null,
+      "featured": false,
+      "order": 1000,
       "repoId": "1337002792",
-      "visible": true,
-      "featured": false,
-      "order": 1000,
-      "acknowledgedIncidentId": null
+      "visible": true
     },
     {
-      "repoId": "1349208725",
-      "visible": true,
+      "acknowledgedIncidentId": null,
       "featured": true,
       "order": 3,
-      "acknowledgedIncidentId": null
+      "repoId": "1349208725",
+      "visible": true
     },
     {
-      "repoId": "1358783702",
-      "visible": true,
+      "acknowledgedIncidentId": null,
       "featured": true,
       "order": 2,
-      "acknowledgedIncidentId": null
+      "repoId": "1358783702",
+      "visible": true
     }
   ]
 }

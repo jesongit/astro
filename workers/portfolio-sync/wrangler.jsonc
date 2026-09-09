@@ -9,6 +9,7 @@
   "compatibility_flags": ["nodejs_compat"],
   "workers_dev": false,
   "preview_urls": false,
+  "observability": { "enabled": true, "head_sampling_rate": 1 },
   "triggers": { "crons": ["* * * * *"] },
   "kv_namespaces": [
     {
@@ -22,7 +23,8 @@
     "GITHUB_OWNER": "jesongit",
     "GITHUB_OWNER_TYPE": "user",
     "GITHUB_API_VERSION": "2026-03-10",
-    "SYNC_ENABLED": "false",
+    // 2026-09-09 生产验收(admin 未鉴权 401/302 拦截)通过后开启
+    "SYNC_ENABLED": "true",
   },
   "env": {
     "preview": {

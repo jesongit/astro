@@ -45,12 +45,16 @@ export const GET: APIRoute = async context => {
 
   const pageSize = 100;
   const all: RepoSummary[] = [];
+  const repoIds = inventory.repos.map(entry => entry.repoId);
+  const [settingsByRepo, observationsByRepo] = await Promise.all([
+    runtime.control.getSettingsMany(repoIds),
+    runtime.cache.getLatestObservations(repoIds),
+  ]);
   for (const entry of inventory.repos) {
-    const settings: DisplaySettings | null = await runtime.control.getSettings(
-      entry.repoId
-    );
+    const settings: DisplaySettings | null =
+      settingsByRepo[entry.repoId] ?? null;
     const observation: SourceObservation | null =
-      await runtime.cache.getLatestObservation(entry.repoId);
+      observationsByRepo.get(entry.repoId) ?? null;
     all.push({
       repoId: entry.repoId,
       fullName: entry.fullName,

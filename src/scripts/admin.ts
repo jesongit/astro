@@ -2,7 +2,7 @@
  * 管理页前端逻辑(计划 §10.1):
  * - 会话获取 CSRF token(只驻留内存);
  * - 列表/筛选/刷新;逐仓库保存(保存期间禁用重复提交);
- * - 上下移动排序(逐项 revision 保存,部分失败明确列出);
+ * - 上下调整排序值(本地修改,点击保存后提交);
  * - 全量/单仓库同步 202 轮询;未确认事件显式确认后才能恢复展示。
  */
 interface AdminReposResponse {
@@ -37,6 +37,9 @@ const state = {
   csrfToken: "",
   revisions: new Map<string, string>(),
   saving: new Set<string>(),
+  repos: [] as AdminReposResponse["repos"],
+  inventoryComplete: false,
+  reposLoaded: false,
 };
 
 const $ = (sel: string): HTMLElement =>
@@ -53,6 +56,7 @@ async function api<T>(
   };
   const response = await fetch(path, {
     ...init,
+    cache: "no-store",
     headers,
     body: init?.json !== undefined ? JSON.stringify(init.json) : init?.body,
   });
@@ -65,9 +69,8 @@ async function api<T>(
     const extra = body?.fieldErrors
       ?.map(f => `${f.path}: ${f.message}`)
       .join("; ");
-    throw new Error(
-      `${response.status} ${body?.code ?? ""} ${body?.message ?? ""} ${extra}`
-    );
+    const details = [body?.message, extra].filter(Boolean).join(" ");
+    throw new Error(`${response.status} ${body?.code ?? ""} ${details}`.trim());
   }
   if (response.status === 204) return undefined as T;
   return (await response.json()) as T;
@@ -82,22 +85,49 @@ async function loadSession(): Promise<void> {
   $("#admin-identity").textContent = session.email;
 }
 
-async function loadRepos(): Promise<void> {
-  const q = ($("#filter-q") as HTMLInputElement).value.trim();
+function renderRepos(): void {
+  const q = ($("#filter-q") as HTMLInputElement).value.trim().toLowerCase();
   const status = ($("#filter-status") as HTMLSelectElement).value;
-  const params = new URLSearchParams();
-  if (q) params.set("q", q);
-  if (status !== "all") params.set("status", status);
-  const data = await api<AdminReposResponse>(`/api/admin/repos?${params}`);
-  $("#list-meta").textContent = data.inventoryComplete
-    ? `共 ${data.repos.length} 个候选(清单完整)`
-    : "候选清单不完整,数据可能滞后";
+  let repos = state.repos.filter(repo =>
+    q ? repo.fullName.toLowerCase().includes(q) || repo.repoId === q : true
+  );
+  if (status === "visible") repos = repos.filter(repo => repo.visible);
+  if (status === "hidden") repos = repos.filter(repo => !repo.visible);
+  if (status === "featured") repos = repos.filter(repo => repo.featured);
+  if (status === "enhanced")
+    repos = repos.filter(repo => repo.mode === "enhanced");
+  if (status === "config_error")
+    repos = repos.filter(repo => repo.configState === "invalid");
+  if (status === "sync_error") {
+    repos = repos.filter(
+      repo =>
+        repo.eligibility === "unknown" ||
+        repo.releaseState === "error" ||
+        repo.warnings.length > 0
+    );
+  }
 
+  $("#list-meta").textContent = state.inventoryComplete
+    ? `显示 ${repos.length} / ${state.repos.length} 个候选(清单完整)`
+    : `显示 ${repos.length} / ${state.repos.length} 个候选(清单不完整,数据可能滞后)`;
   const container = $("#repos");
   container.innerHTML = "";
-  for (const repo of data.repos) {
+  for (const repo of repos) {
     container.append(renderRepo(repo));
   }
+}
+
+async function loadRepos(force = false): Promise<void> {
+  if (!force && state.reposLoaded) {
+    renderRepos();
+    return;
+  }
+  $("#list-meta").textContent = "正在读取候选清单…";
+  const data = await api<AdminReposResponse>("/api/admin/repos");
+  state.repos = data.repos;
+  state.inventoryComplete = data.inventoryComplete;
+  state.reposLoaded = true;
+  renderRepos();
 }
 
 function renderRepo(repo: AdminReposResponse["repos"][number]): HTMLElement {
@@ -123,9 +153,9 @@ function renderRepo(repo: AdminReposResponse["repos"][number]): HTMLElement {
       <label><input type="checkbox" data-act="visible" ${repo.visible ? "checked" : ""} ${busy ? "disabled" : ""}/> 展示</label>
       <label><input type="checkbox" data-act="featured" ${repo.featured ? "checked" : ""} ${busy ? "disabled" : ""}/> 精选</label>
       <label>排序 <input type="number" data-act="order" value="${repo.order ?? 1000}" min="0" max="1000000" step="1" class="w-24 border border-border bg-background px-2 py-1" ${busy ? "disabled" : ""}/></label>
-      <button type="button" data-act="save" class="btn-line" ${busy ? "disabled" : ""}>保存</button>
-      <button type="button" data-act="up" class="btn-line" ${busy ? "disabled" : ""}>↑</button>
-      <button type="button" data-act="down" class="btn-line" ${busy ? "disabled" : ""}>↓</button>
+      <button type="button" data-act="save" class="btn-line" title="保存展示、精选和排序设置" ${busy ? "disabled" : ""}>保存设置</button>
+      <button type="button" data-act="up" class="btn-line" title="排序值减 10,优先级提高" ${busy ? "disabled" : ""}>↑ 上移</button>
+      <button type="button" data-act="down" class="btn-line" title="排序值加 10,优先级降低" ${busy ? "disabled" : ""}>↓ 下移</button>
       <button type="button" data-act="sync" class="btn-line" ${busy ? "disabled" : ""}>同步此仓库</button>
       <span data-role="status" class="text-xs text-foreground/60" aria-live="polite"></span>
     </div>
@@ -190,12 +220,17 @@ async function handleAct(
         revision: state.revisions.get(repoId) ?? (await getRevision(repoId)),
       });
       show("已保存(传播中)");
-      await loadRepos();
+      await loadRepos(true);
     } else if (act === "up" || act === "down") {
-      setBusy(true);
-      show("排序中…");
-      await reorder(repoId, act === "up" ? -1 : 1);
-      await loadRepos();
+      const orderInput = card.querySelector(
+        '[data-act="order"]'
+      ) as HTMLInputElement;
+      const current = Number(orderInput.value);
+      const next =
+        (Number.isInteger(current) ? current : 1000) +
+        (act === "up" ? -10 : 10);
+      orderInput.value = String(Math.max(0, Math.min(1_000_000, next)));
+      show(`已调整排序值为 ${orderInput.value},点击“保存设置”生效`);
     } else if (act === "sync") {
       setBusy(true);
       show("排队中…");
@@ -246,40 +281,6 @@ async function saveSettings(
   state.revisions.set(repoId, result.settings.revision);
 }
 
-async function reorder(repoId: string, delta: number): Promise<void> {
-  const revision = state.revisions.get(repoId) ?? (await getRevision(repoId));
-  const detail = await api<RepoDetail>(`/api/admin/repos/${repoId}`);
-  const current = detail.settings ? await currentOrder(repoId) : 1000;
-  const nextOrder = Math.max(0, current + delta * 10);
-  const result = await api<{
-    results: { repoId: string; ok: boolean; code?: string }[];
-  }>("/api/admin/reorder", {
-    method: "POST",
-    json: { items: [{ repoId, revision, order: nextOrder }] },
-  });
-  if (!result.results[0]?.ok) {
-    throw new Error(`排序失败:${result.results[0]?.code ?? "unknown"}`);
-  }
-  const saved = await api<{ settings: { revision: string } }>(
-    `/api/admin/repos/${repoId}/settings`,
-    {
-      method: "PATCH",
-      json: {
-        revision: state.revisions.get(repoId) ?? (await getRevision(repoId)),
-      },
-    }
-  );
-  state.revisions.set(repoId, saved.settings.revision);
-  void detail;
-}
-
-async function currentOrder(repoId: string): Promise<number> {
-  const detail = await api<{ settings: { order: number | null } | null }>(
-    `/api/admin/repos/${repoId}`
-  );
-  return detail.settings?.order ?? 1000;
-}
-
 async function pollJob(
   jobId: string,
   show: (t: string) => void
@@ -314,34 +315,33 @@ async function fullSync(): Promise<void> {
     });
     await pollJob(jobId, t => (stateEl.textContent = t));
     stateEl.textContent = "完成";
-    await loadRepos();
+    await loadRepos(true);
   } catch (e) {
     stateEl.textContent = `失败:${(e as Error).message}`;
   }
 }
 
 async function main(): Promise<void> {
+  const root = document.querySelector<HTMLElement>("[data-admin-root]");
+  if (!root || root.dataset.adminBooted === "1") return;
+  root.dataset.adminBooted = "1";
+
   try {
     await loadSession();
+    await loadRepos();
   } catch (e) {
     const error = $("#error");
     error.classList.remove("hidden");
     error.textContent = `会话获取失败:${(e as Error).message}`;
     return;
   }
-  $("#btn-reload").addEventListener("click", () => void loadRepos());
-  $("#filter-status").addEventListener("change", () => void loadRepos());
+  $("#btn-reload").addEventListener("click", () => void loadRepos(true));
+  $("#filter-status").addEventListener("change", () => renderRepos());
   $("#btn-full-sync").addEventListener("click", () => void fullSync());
-  let debounce: ReturnType<typeof setTimeout> | undefined;
-  $("#filter-q").addEventListener("input", () => {
-    clearTimeout(debounce);
-    debounce = setTimeout(() => void loadRepos(), 300);
-  });
-  await loadRepos();
+  $("#filter-q").addEventListener("input", () => renderRepos());
 }
 
 document.addEventListener("astro:page-load", () => void main());
-if (!document.querySelector("[data-admin-booted]")) {
-  document.body.dataset.adminBooted = "1";
+if (document.readyState !== "loading") {
   void main();
 }

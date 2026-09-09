@@ -172,6 +172,50 @@ async function getLatestObservationFrom(
   return latest;
 }
 
+/** 批量取最新观察:一次扫描观察 key,避免管理列表按仓库重复 list。 */
+async function getLatestObservationsFrom(
+  kv: PortfolioKV,
+  repoIds: string[],
+  lookback = 5
+): Promise<Map<string, SourceObservation | null>> {
+  const wanted = new Set(repoIds);
+  const candidateKeys = new Map<string, string[]>();
+  const names = (await listAllKeys(kv, "v1:obs:")).sort();
+
+  for (const name of names) {
+    const match = /^v1:obs:([^:]+):/.exec(name);
+    if (!match || !wanted.has(match[1])) continue;
+    const keys = candidateKeys.get(match[1]) ?? [];
+    if (keys.length < lookback) {
+      keys.push(name);
+      candidateKeys.set(match[1], keys);
+    }
+  }
+
+  const latest = new Map<string, SourceObservation | null>();
+  await Promise.all(
+    [...wanted].map(async repoId => {
+      const observations = await Promise.all(
+        (candidateKeys.get(repoId) ?? []).map(name =>
+          jsonGet<SourceObservation>(kv, name)
+        )
+      );
+      let current: SourceObservation | null = null;
+      for (const observation of observations) {
+        if (
+          observation &&
+          (!current ||
+            Date.parse(observation.observedAt) > Date.parse(current.observedAt))
+        ) {
+          current = observation;
+        }
+      }
+      latest.set(repoId, current);
+    })
+  );
+  return latest;
+}
+
 /* ───────────── CACHE 公开读侧(Pages 只读) ───────────── */
 
 export class PublicCacheStore {
@@ -186,6 +230,13 @@ export class PublicCacheStore {
     lookback = 5
   ): Promise<SourceObservation | null> {
     return getLatestObservationFrom(this.kv, repoId, lookback);
+  }
+
+  async getLatestObservations(
+    repoIds: string[],
+    lookback = 5
+  ): Promise<Map<string, SourceObservation | null>> {
+    return getLatestObservationsFrom(this.kv, repoIds, lookback);
   }
 
   async getIncidents(repoId: string): Promise<Incident[]> {

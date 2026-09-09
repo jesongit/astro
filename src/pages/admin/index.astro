@@ -11,7 +11,7 @@ export const prerender = false;
 ---
 
 <AdminLayout title={`作品管理 | ${SITE.title}`}>
-  <main class="mx-auto w-full max-w-5xl px-4 py-8">
+  <main data-admin-root class="mx-auto w-full max-w-5xl px-4 py-8">
     <header class="mb-6 flex flex-wrap items-baseline justify-between gap-3">
       <h1 class="font-serif text-2xl font-bold tracking-wide">作品管理</h1>
       <div class="flex items-center gap-3 text-sm text-foreground/60">
@@ -22,6 +22,16 @@ export const prerender = false;
         <span id="sync-state" aria-live="polite"></span>
       </div>
     </header>
+
+    <section
+      class="mb-5 border border-border bg-muted/40 p-3 text-xs leading-6 text-foreground/70"
+      aria-label="管理说明"
+    >
+      <p>
+        <span class="font-semibold text-foreground">操作说明：</span>
+        筛选和搜索只作用于本次已加载的数据，不会重复请求；“展示”控制作品是否出现在公开列表；“精选”只影响首页精选；排序值越小优先级越高，“↑/↓”只在本地调整排序值，点击“保存设置”后生效；“同步此仓库”只同步当前仓库，“全量同步”同步全部候选。点击“刷新”才会重新读取最新数据。
+      </p>
+    </section>
 
     <section class="mb-4 flex flex-wrap items-center gap-2 text-sm">
       <input

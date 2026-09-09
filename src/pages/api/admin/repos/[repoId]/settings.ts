@@ -45,12 +45,17 @@ export const PATCH: APIRoute = async context => {
     acknowledgedIncidentId?: unknown;
   };
 
-  if (typeof body.revision !== "string" || body.revision === "") {
+  const before = await runtime.control.getSettings(repoId);
+  // 首次保存时设置记录尚不存在,前端读取到空字符串作为“已读 revision”。
+  // 只有已有设置时才要求非空 revision,避免首次保存被错误拦截。
+  if (
+    typeof body.revision !== "string" ||
+    (body.revision === "" && before !== null)
+  ) {
     return jsonError(400, "revision_required", "必须携带已读 revision。");
   }
 
-  const before = await runtime.control.getSettings(repoId);
-  if (before?.revision !== body.revision) {
+  if (before && before.revision !== body.revision) {
     return jsonError(
       409,
       "revision_conflict",

@@ -97,7 +97,8 @@ function claimsOk(
 }
 
 const verifyOptions = (config: AccessConfig): JWTVerifyOptions => ({
-  issuer: `https://${config.teamDomain}/`,
+  // Cloudflare Access 的 iss 是无结尾斜杠的 team origin。
+  issuer: `https://${config.teamDomain.replace(/\/+$/, "")}`,
   audience: config.aud,
   algorithms: ["RS256", "ES256"],
   clockTolerance: 5,

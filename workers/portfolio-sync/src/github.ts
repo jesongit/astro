@@ -58,7 +58,9 @@ export class GitHubClient {
 
   constructor(private readonly opts: GitHubClientOptions) {
     this.timeoutMs = opts.timeoutMs ?? SYNC.singleRequestTimeoutMs;
-    this.fetchImpl = opts.fetchImpl ?? fetch;
+    // Cloudflare Workers 的全局 fetch 依赖 globalThis 作为 this;
+    // 保存为普通函数后直接调用会触发 Illegal invocation。
+    this.fetchImpl = opts.fetchImpl ?? globalThis.fetch.bind(globalThis);
   }
 
   /** fullName 形如 owner/name;仓库级端点统一用它拼路径(§7.2 /repos/{owner}/{repo}) */

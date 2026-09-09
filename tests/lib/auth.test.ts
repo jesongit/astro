@@ -35,7 +35,7 @@ const signTestJwt = async (
     ...overrides,
   })
     .setProtectedHeader({ alg: "RS256", kid: "test-key" })
-    .setIssuer((overrides.iss as string) ?? `https://${TEAM}/`)
+    .setIssuer((overrides.iss as string) ?? `https://${TEAM}`)
     .setAudience((overrides.aud as string) ?? AUD)
     .setSubject((overrides.sub as string) ?? "user-sub-1")
     .setIssuedAt((overrides.iat as number) ?? now)

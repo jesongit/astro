@@ -1,7 +1,7 @@
 export const SITE = {
-  website: "https://www.posase.im/",
+  website: "https://posase.im/",
   author: "Posase",
-  profile: "https://www.posase.im/",
+  profile: "https://posase.im/",
   desc: "夜晚潮湿 地面潮湿 空气寂静 树林沉默",
   title: "粥盐籽",
   ogImage: "astropaper-og.jpg",

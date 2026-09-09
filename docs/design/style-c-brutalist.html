@@ -1,0 +1,705 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>风格 C · 硬边 Brutalist — 作品界面模板</title>
+<style>
+/* ═══════════════════════════════════════════
+   风格 C 「硬边」— 新粗野主义 / Neo-Brutalism
+   设计语言:2px 粗描边 · 硬投影 · 奶油底 + 橙蓝撞色 · 贴纸徽章 · 方块按钮
+   ═══════════════════════════════════════════ */
+:root {
+  --sans: -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif;
+  --mono: ui-monospace, Consolas, "Cascadia Code", monospace;
+}
+:root, html[data-theme="light"] {
+  --bg: #f6f1e7;
+  --fg: #161513;
+  --muted: #615c50;
+  --line: #161513;
+  --card: #fffdf6;
+  --accent: #ff5900;
+  --accent-fg: #fff;
+  --blue: #2f6bff;
+  --green: #0d9459;
+  --hl: #ffd60a;
+  --shadow: 5px 5px 0 var(--fg);
+  --shadow-sm: 3px 3px 0 var(--fg);
+}
+html[data-theme="dark"] {
+  --bg: #171410;
+  --fg: #f4efe3;
+  --muted: #a89f8d;
+  --line: #f4efe3;
+  --card: #201c15;
+  --accent: #ff6a1f;
+  --accent-fg: #171410;
+  --blue: #7fa4ff;
+  --green: #3ecf8e;
+  --hl: #ffd60a;
+  --shadow: 5px 5px 0 #000;
+  --shadow-sm: 3px 3px 0 #000;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: var(--sans);
+  background: var(--bg);
+  color: var(--fg);
+  font-size: 15px;
+  line-height: 1.75;
+  -webkit-font-smoothing: antialiased;
+}
+a { color: inherit; text-decoration: none; }
+:focus-visible { outline: 3px solid var(--blue); outline-offset: 2px; }
+::selection { background: var(--hl); color: #161513; }
+
+/* ── 预览控制台(非设计一部分) ── */
+.mockbar {
+  position: sticky; top: 0; z-index: 99;
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  background: #211f1c; color: #eee9dd; padding: 10px 20px; font-size: 13px;
+  border-bottom: 3px solid #000;
+}
+.mockbar .tag { font-size: 10px; letter-spacing: .25em; padding: 3px 8px; border: 1px solid #6b6558; color: #b5ad9b; }
+.mockbar strong { font-weight: 700; }
+.mock-tabs { display: flex; gap: 4px; margin-left: auto; }
+.mock-tabs button, .mock-theme {
+  background: none; border: 1px solid transparent; color: #b5ad9b;
+  font: inherit; padding: 4px 12px; cursor: pointer;
+}
+.mock-tabs button:hover { color: #fff; }
+.mock-tabs button.is-active { border-color: #6b6558; color: #fff; }
+.mock-theme { border-color: #6b6558; }
+
+.view { display: none; }
+.view.is-active { display: block; }
+
+.wrap { max-width: 1080px; margin: 0 auto; padding: 0 24px; }
+.wrap-mid { max-width: 840px; margin: 0 auto; padding: 0 24px; }
+
+/* ── 站点头部 ── */
+.site-head { border-bottom: 2px solid var(--line); background: var(--card); position: relative; z-index: 2; }
+.site-head .bar { display: flex; align-items: center; justify-content: space-between; padding: 18px 0; gap: 14px; flex-wrap: wrap; }
+.logo {
+  font-size: 21px; font-weight: 900; letter-spacing: .02em;
+  background: var(--hl); color: #161513; border: 2px solid var(--line);
+  padding: 4px 14px; box-shadow: var(--shadow-sm);
+}
+.nav { display: flex; gap: 8px; flex-wrap: wrap; }
+.nav a {
+  font-size: 14px; font-weight: 700; padding: 6px 16px;
+  border: 2px solid var(--line); background: var(--card);
+  transition: all .12s;
+}
+.nav a:hover { background: var(--hl); box-shadow: var(--shadow-sm); transform: translate(-1px, -1px); }
+.nav a.on { background: var(--accent); color: var(--accent-fg); box-shadow: var(--shadow-sm); transform: translate(-1px, -1px); }
+
+/* ── 通用区块 ── */
+.sec { padding: 62px 0 12px; }
+.sec-head { display: flex; align-items: center; gap: 16px; margin-bottom: 30px; flex-wrap: wrap; }
+.sec-head h2 {
+  font-size: 26px; font-weight: 900; letter-spacing: .02em;
+  background: var(--fg); color: var(--bg); padding: 6px 18px;
+  box-shadow: var(--shadow-sm); transform: rotate(-1deg);
+}
+.sec-head .en { font-family: var(--mono); font-size: 11px; letter-spacing: .3em; color: var(--muted); }
+.sec-head .line { flex: 1; height: 2px; background: var(--line); }
+
+/* ── Hero ── */
+.hero { padding: 90px 0 80px; border-bottom: 2px solid var(--line); position: relative; overflow: hidden; }
+.hero::before, .hero::after {
+  content: ""; position: absolute; border: 2px solid var(--line); z-index: 0;
+}
+.hero::before { width: 130px; height: 130px; right: 8%; top: 40px; background: var(--blue); box-shadow: var(--shadow); transform: rotate(8deg); }
+.hero::after { width: 90px; height: 90px; right: 20%; bottom: 30px; background: var(--accent); box-shadow: var(--shadow); transform: rotate(-6deg); }
+.hero .in { position: relative; z-index: 1; max-width: 640px; }
+.hero h1 {
+  font-size: clamp(44px, 8vw, 76px); font-weight: 900; line-height: 1.1; letter-spacing: .01em;
+  margin: 18px 0 14px;
+}
+.hero h1 .mark { background: linear-gradient(transparent 55%, var(--hl) 55%); }
+.hero .verse { font-size: 16px; color: var(--muted); font-weight: 600; }
+.hero .socials { margin-top: 30px; display: flex; gap: 14px; flex-wrap: wrap; }
+.hero .socials a {
+  font-size: 13.5px; font-weight: 700; padding: 8px 18px;
+  border: 2px solid var(--line); background: var(--card); box-shadow: var(--shadow-sm);
+  transition: all .12s;
+}
+.hero .socials a:hover { background: var(--hl); transform: translate(-2px, -2px); box-shadow: 5px 5px 0 var(--fg); }
+
+/* ── 作品卡片 ── */
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 26px; }
+.p-card {
+  position: relative; display: flex; flex-direction: column;
+  background: var(--card); border: 2px solid var(--line);
+  box-shadow: var(--shadow); transition: all .15s;
+}
+.p-card:hover { transform: translate(-3px, -3px); box-shadow: 8px 8px 0 var(--fg); }
+.p-cover {
+  aspect-ratio: 16 / 9; border-bottom: 2px solid var(--line);
+  display: grid; place-items: center; position: relative; overflow: hidden;
+}
+.p-cover b { font-size: 58px; font-weight: 900; color: var(--fg); opacity: .85; }
+.p-cover.c1 { background: repeating-linear-gradient(-45deg, var(--card) 0 14px, color-mix(in srgb, var(--hl) 45%, var(--card)) 14px 28px); }
+.p-cover.c2 { background: repeating-linear-gradient(-45deg, var(--card) 0 14px, color-mix(in srgb, var(--blue) 30%, var(--card)) 14px 28px); }
+.p-cover.c3 { background: repeating-linear-gradient(-45deg, var(--card) 0 14px, color-mix(in srgb, var(--accent) 25%, var(--card)) 14px 28px); }
+.p-cover .note { position: absolute; right: 8px; bottom: 6px; font-family: var(--mono); font-size: 10px; color: var(--muted); }
+.badge {
+  position: absolute; top: -14px; right: -10px; z-index: 1;
+  font-size: 12px; font-weight: 900; letter-spacing: .1em;
+  background: var(--accent); color: var(--accent-fg);
+  border: 2px solid var(--line); padding: 4px 12px; box-shadow: var(--shadow-sm);
+  transform: rotate(6deg);
+}
+.p-body { padding: 20px; display: flex; flex-direction: column; gap: 12px; flex: 1; }
+.p-title { font-size: 20px; font-weight: 900; }
+.p-summary { font-size: 13.5px; color: var(--muted); font-weight: 500; flex: 1; }
+.p-tags { display: flex; flex-wrap: wrap; gap: 8px; }
+.p-tags span {
+  font-family: var(--mono); font-size: 11px; font-weight: 700;
+  border: 2px solid var(--line); padding: 2px 10px; background: var(--bg);
+}
+.p-facts { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; border-top: 2px dashed var(--line); padding-top: 12px; font-family: var(--mono); font-size: 12px; font-weight: 700; }
+.p-facts .ver { background: var(--hl); color: #161513; border: 2px solid var(--line); padding: 1px 9px; }
+.p-facts .dim { color: var(--muted); }
+
+/* ── 按钮 ── */
+.btn {
+  display: inline-flex; align-items: center; gap: 10px;
+  font-size: 14px; font-weight: 900; letter-spacing: .04em;
+  padding: 12px 26px; border: 2px solid var(--line);
+  background: var(--card); box-shadow: var(--shadow-sm); transition: all .12s;
+}
+.btn:hover { transform: translate(-2px, -2px); box-shadow: 5px 5px 0 var(--fg); }
+.btn:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--fg); }
+.btn-solid { background: var(--accent); color: var(--accent-fg); }
+.btn-blue { background: var(--blue); color: #fff; }
+.more-row { display: flex; justify-content: center; padding: 44px 0 64px; }
+
+/* ── 文章行 ── */
+.post-row {
+  display: flex; align-items: center; justify-content: space-between; gap: 18px;
+  border: 2px solid var(--line); background: var(--card);
+  padding: 14px 20px; margin-bottom: 14px; box-shadow: var(--shadow-sm);
+  transition: all .12s;
+}
+.post-row:hover { transform: translate(-2px, -2px); box-shadow: 5px 5px 0 var(--fg); background: var(--hl); }
+.post-row:hover :is(h3, time) { color: #161513; }
+.post-row h3 { font-size: 16px; font-weight: 800; }
+.post-row time { font-family: var(--mono); font-size: 12px; font-weight: 700; color: var(--muted); white-space: nowrap; }
+
+/* ── 列表页 ── */
+.page-head { padding: 70px 0 0; }
+.page-head h1 {
+  display: inline-block; font-size: clamp(36px, 6vw, 56px); font-weight: 900;
+  background: var(--fg); color: var(--bg); padding: 4px 24px;
+  box-shadow: 6px 6px 0 var(--accent); transform: rotate(-1deg);
+  margin: 22px 0 14px;
+}
+.page-head .count { font-family: var(--mono); font-size: 13px; font-weight: 700; color: var(--muted); }
+.filter {
+  display: flex; flex-wrap: wrap; gap: 10px; align-items: center;
+  border: 2px solid var(--line); background: var(--card); padding: 16px;
+  box-shadow: var(--shadow-sm); margin: 30px 0 34px;
+}
+.filter input[type="text"] {
+  flex: 1; min-width: 170px; font: inherit; font-weight: 600; font-size: 14px;
+  border: 2px solid var(--line); background: var(--bg); color: var(--fg); padding: 9px 14px;
+}
+.filter input[type="text"]::placeholder { color: var(--muted); }
+.filter select {
+  font: inherit; font-size: 13px; font-weight: 700;
+  border: 2px solid var(--line); background: var(--card); color: var(--fg); padding: 9px 10px;
+}
+.pagination { display: flex; justify-content: center; gap: 10px; padding: 46px 0 68px; font-family: var(--mono); font-weight: 700; }
+.pagination a, .pagination span {
+  min-width: 40px; height: 40px; display: grid; place-items: center;
+  border: 2px solid var(--line); background: var(--card); box-shadow: var(--shadow-sm);
+}
+.pagination .cur { background: var(--accent); color: var(--accent-fg); }
+.pagination a:hover { background: var(--hl); color: #161513; transform: translate(-1px, -1px); }
+
+/* ── 详情页 ── */
+.back {
+  display: inline-block; margin-top: 36px; font-size: 13.5px; font-weight: 900;
+  border: 2px solid var(--line); background: var(--card); padding: 8px 18px; box-shadow: var(--shadow-sm);
+}
+.back:hover { background: var(--hl); color: #161513; }
+.d-head { padding: 26px 0 36px; border-bottom: 2px solid var(--line); }
+.d-head .slug { font-family: var(--mono); font-size: 12px; font-weight: 700; color: var(--muted); }
+.d-head h1 { font-size: clamp(32px, 6vw, 52px); font-weight: 900; margin: 12px 0; line-height: 1.2; }
+.d-summary { font-size: 16px; font-weight: 600; color: var(--muted); max-width: 640px; }
+.d-actions { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 28px; }
+
+.meta-strip { display: flex; flex-wrap: wrap; border: 2px solid var(--line); background: var(--card); box-shadow: var(--shadow-sm); margin-top: 34px; }
+.meta-cell { flex: 1; min-width: 130px; padding: 16px 20px; border-right: 2px solid var(--line); }
+.meta-cell:last-child { border-right: none; }
+.meta-cell .k { display: block; font-family: var(--mono); font-size: 10.5px; font-weight: 700; letter-spacing: .2em; color: var(--muted); margin-bottom: 4px; }
+.meta-cell .v { font-size: 16px; font-weight: 900; }
+
+.d-sec { padding: 48px 0 8px; }
+.d-sec > h2 {
+  display: inline-block; font-size: 20px; font-weight: 900;
+  background: var(--hl); color: #161513; border: 2px solid var(--line);
+  padding: 4px 16px; box-shadow: var(--shadow-sm); transform: rotate(-1deg);
+  margin-bottom: 24px;
+}
+.feat-list { list-style: none; display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px 18px; counter-reset: feat; }
+.feat-list li {
+  counter-increment: feat; display: flex; gap: 12px; align-items: baseline;
+  border: 2px solid var(--line); background: var(--card); padding: 12px 16px;
+  font-size: 14px; font-weight: 600; box-shadow: var(--shadow-sm);
+}
+.feat-list li::before {
+  content: counter(feat, decimal-leading-zero);
+  font-family: var(--mono); font-weight: 900; color: var(--accent);
+}
+
+.prose { max-width: 720px; }
+.prose h3 { font-size: 18px; font-weight: 900; margin: 30px 0 10px; }
+.prose h3 .mk { background: linear-gradient(transparent 55%, var(--hl) 55%); }
+.prose p { margin: 12px 0; }
+.prose ul { margin: 12px 0 12px 6px; list-style: none; }
+.prose li { margin: 6px 0; font-weight: 600; }
+.prose li::before { content: "▸ "; color: var(--accent); font-weight: 900; }
+.prose pre {
+  border: 2px solid var(--line); background: var(--fg); color: var(--bg);
+  padding: 18px 20px; font-family: var(--mono); font-size: 13px;
+  overflow-x: auto; margin: 20px 0; box-shadow: var(--shadow);
+}
+html[data-theme="dark"] .prose pre { background: #0c0a07; color: #e8e2d2; }
+.prose blockquote {
+  border: 2px solid var(--line); border-left: 10px solid var(--accent);
+  background: var(--card); padding: 14px 18px; margin: 20px 0; font-weight: 700;
+}
+.shots { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 24px; }
+.shots figure { border: 2px solid var(--line); background: var(--card); box-shadow: var(--shadow); }
+.shots .ph { aspect-ratio: 16 / 10; display: grid; place-items: center; font-weight: 900; letter-spacing: .3em; color: var(--muted); background: repeating-linear-gradient(-45deg, var(--card) 0 16px, color-mix(in srgb, var(--hl) 30%, var(--card)) 16px 32px); border-bottom: 2px solid var(--line); }
+.shots figcaption { padding: 10px 16px; font-size: 12.5px; font-weight: 700; color: var(--muted); }
+.chip-row { display: flex; flex-wrap: wrap; gap: 10px; }
+.chip { font-size: 13px; font-weight: 800; border: 2px solid var(--line); padding: 4px 14px; background: var(--card); }
+.chip.hot { background: var(--blue); color: #fff; }
+.chip.topic { background: var(--bg); font-family: var(--mono); font-weight: 700; }
+
+/* 下载模块 */
+.release { border: 2px solid var(--line); background: var(--card); box-shadow: var(--shadow); }
+.release-top {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 14px;
+  padding: 16px 20px; border-bottom: 2px solid var(--line); background: var(--hl); color: #161513;
+}
+.release-top .ver { font-size: 22px; font-weight: 900; }
+.release-top .date { font-family: var(--mono); font-size: 12px; font-weight: 700; }
+.release-top .gh { margin-left: auto; font-size: 13px; font-weight: 900; border-bottom: 2px solid #161513; }
+.rel-notes { padding: 14px 20px; border-bottom: 2px dashed var(--line); }
+.rel-notes li { list-style: none; font-size: 13.5px; font-weight: 600; margin: 3px 0; }
+.rel-notes li::before { content: "✦ "; color: var(--accent); font-weight: 900; }
+.dl-groups { padding: 16px 20px 20px; }
+.dl-group { border: 2px solid var(--line); margin-bottom: 12px; background: var(--bg); }
+.dl-group summary {
+  list-style: none; cursor: pointer; display: flex; align-items: center; gap: 10px;
+  padding: 11px 16px; font-size: 14px; font-weight: 900; background: var(--card);
+}
+.dl-group summary::-webkit-details-marker { display: none; }
+.dl-group summary .mk { display: inline-grid; place-items: center; width: 20px; height: 20px; border: 2px solid var(--line); background: var(--accent); color: var(--accent-fg); font-size: 10px; transition: transform .15s; }
+.dl-group[open] summary .mk { transform: rotate(90deg); }
+.dl-group summary .cnt { margin-left: auto; font-family: var(--mono); font-size: 11px; font-weight: 700; color: var(--muted); }
+.dl-row { display: flex; align-items: center; gap: 12px; padding: 10px 16px; border-top: 2px dashed var(--line); font-size: 13.5px; font-weight: 600; }
+.dl-row .name { font-family: var(--mono); font-size: 12.5px; font-weight: 700; }
+.dl-row .size { font-family: var(--mono); font-size: 11px; color: var(--muted); }
+.dl-row a { margin-left: auto; font-size: 12px; font-weight: 900; background: var(--blue); color: #fff; border: 2px solid var(--line); padding: 3px 12px; box-shadow: 2px 2px 0 var(--fg); }
+.dl-row a:active { transform: translate(1px, 1px); box-shadow: none; }
+.src-row { border-top: 2px solid var(--line); padding: 14px 20px; display: flex; gap: 16px; flex-wrap: wrap; align-items: center; font-size: 13px; font-weight: 800; color: var(--muted); }
+.src-row a { color: var(--fg); border-bottom: 3px solid var(--hl); }
+
+/* ── 页脚 ── */
+.site-foot { border-top: 2px solid var(--line); margin-top: 88px; background: var(--card); }
+.site-foot .in { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 10px; padding: 26px 0; font-size: 13px; font-weight: 700; color: var(--muted); }
+
+@media (max-width: 720px) {
+  .site-head .bar { flex-direction: column; align-items: flex-start; }
+  .hero::before, .hero::after { display: none; }
+  .meta-cell { border-bottom: 2px solid var(--line); }
+}
+</style>
+</head>
+<body>
+
+<div class="mockbar">
+  <span class="tag">MOCKUP</span>
+  <strong>风格 C · 硬边 Brutalist</strong>
+  <nav class="mock-tabs">
+    <button data-view-btn="home" class="is-active">首页</button>
+    <button data-view-btn="list">作品列表</button>
+    <button data-view-btn="detail">作品详情</button>
+  </nav>
+  <button class="mock-theme" data-theme-toggle>深 / 浅</button>
+</div>
+
+<!-- ═══════════════════ 视图:首页 ═══════════════════ -->
+<section class="view is-active" data-view="home">
+
+  <header class="site-head">
+    <div class="wrap bar">
+      <a class="logo" href="#">粥盐籽</a>
+      <nav class="nav">
+        <a class="on" href="#">首页</a>
+        <a href="#">作品</a>
+        <a href="#">文章</a>
+        <a href="#">标签</a>
+        <a href="#">归档</a>
+        <a href="#">搜索</a>
+      </nav>
+    </div>
+  </header>
+
+  <div class="wrap">
+    <section class="hero">
+      <div class="in">
+        <p style="font-family:var(--mono);font-size:12px;font-weight:700;letter-spacing:.3em;color:var(--accent)">PORTFOLIO + BLOG</p>
+        <h1>你好,<br>我是<span class="mark">粥盐籽</span></h1>
+        <p class="verse">夜晚潮湿 地面潮湿 空气寂静 树林沉默</p>
+        <div class="socials">
+          <a href="#">GitHub</a><a href="#">RSS 订阅</a><a href="#">Email</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- 组件:ProjectGrid(精选,最多 6) -->
+    <section class="sec">
+      <div class="sec-head">
+        <h2>精选作品</h2>
+        <span class="en">FEATURED</span>
+        <span class="line"></span>
+      </div>
+      <div class="grid">
+        <!-- 组件:ProjectCard -->
+        <a class="p-card" href="#">
+          <span class="badge">精选</span>
+          <div class="p-cover c1"><b>A</b><span class="note">封面色块</span></div>
+          <div class="p-body">
+            <h3 class="p-title">Aurora 博客主题</h3>
+            <p class="p-summary">为 Astro 打造的双栏博客主题,内置深浅色、阅读进度与全文搜索,一行配置即可接入 Pagefind。</p>
+            <p class="p-tags"><span>astro</span><span>tailwind</span><span>blog-theme</span></p>
+            <p class="p-facts"><span class="ver">v2.4.0</span><span>★ 128</span><span class="dim">MIT</span><span class="dim">TypeScript</span></p>
+          </div>
+        </a>
+        <a class="p-card" href="#">
+          <span class="badge">精选</span>
+          <div class="p-cover c2"><b>拾</b><span class="note">封面色块</span></div>
+          <div class="p-body">
+            <h3 class="p-title">拾光相册</h3>
+            <p class="p-summary">自托管家庭相册服务,支持时间线浏览、人脸聚类与原图直链,单个二进制即可部署。</p>
+            <p class="p-tags"><span>go</span><span>self-hosted</span><span>gallery</span></p>
+            <p class="p-facts"><span class="ver">v1.3.1</span><span>★ 86</span><span class="dim">GPL-3.0</span><span class="dim">Go</span></p>
+          </div>
+        </a>
+        <a class="p-card" href="#">
+          <span class="badge">精选</span>
+          <div class="p-cover c3"><b>梗</b><span class="note">封面色块</span></div>
+          <div class="p-body">
+            <h3 class="p-title">梗图抽屉</h3>
+            <p class="p-summary">一键收藏时间线梗图的浏览器扩展,支持标签整理与本地全文搜索。</p>
+            <p class="p-tags"><span>chrome-extension</span><span>meme</span></p>
+            <p class="p-facts"><span class="ver">v0.9.0</span><span>★ 42</span><span class="dim">MIT</span><span class="dim">JavaScript</span></p>
+          </div>
+        </a>
+      </div>
+      <div class="more-row"><a class="btn btn-solid" href="#">全部作品 →</a></div>
+    </section>
+
+    <section class="sec" style="padding-bottom:40px">
+      <div class="sec-head">
+        <h2>最新文章</h2>
+        <span class="en">RECENT POSTS</span>
+        <span class="line"></span>
+      </div>
+      <a class="post-row" href="#"><h3>Pi Agent 快捷键速查</h3><time>2026-09-05</time></a>
+      <a class="post-row" href="#"><h3>Claude Code Desktop 桌面版快速上手</h3><time>2026-08-28</time></a>
+      <a class="post-row" href="#"><h3>Superpowers 与 GSD 深度总结报告</h3><time>2026-08-20</time></a>
+      <a class="post-row" href="#"><h3>AI 网页端转 API 实践</h3><time>2026-08-14</time></a>
+      <div class="more-row"><a class="btn" href="#">全部文章 →</a></div>
+    </section>
+  </div>
+
+  <footer class="site-foot">
+    <div class="wrap in">
+      <span>© 2026 粥盐籽</span>
+      <span>由 Astro 驱动 · RSS</span>
+    </div>
+  </footer>
+</section>
+
+<!-- ═══════════════════ 视图:作品列表 ═══════════════════ -->
+<section class="view" data-view="list">
+
+  <header class="site-head">
+    <div class="wrap bar">
+      <a class="logo" href="#">粥盐籽</a>
+      <nav class="nav">
+        <a href="#">首页</a>
+        <a class="on" href="#">作品</a>
+        <a href="#">文章</a>
+        <a href="#">标签</a>
+        <a href="#">归档</a>
+        <a href="#">搜索</a>
+      </nav>
+    </div>
+  </header>
+
+  <div class="wrap">
+    <div class="page-head">
+      <h1>全部作品</h1>
+      <p class="count">共 6 个作品 · 按人工顺序排列 · 每页 12 项</p>
+    </div>
+
+    <!-- 组件:ProjectFilter(GET 筛选表单示意) -->
+    <form class="filter" method="get" action="/projects/">
+      <input type="text" name="q" placeholder="搜索作品…">
+      <select name="tag" aria-label="按主题标签筛选">
+        <option>全部主题</option><option>astro</option><option>go</option><option>cli</option><option>chrome-extension</option>
+      </select>
+      <select name="stack" aria-label="按技术栈筛选">
+        <option>全部技术栈</option><option>TypeScript</option><option>Go</option><option>Rust</option><option>JavaScript</option>
+      </select>
+      <button class="btn btn-blue" type="submit">筛选</button>
+    </form>
+
+    <!-- 组件:ProjectGrid -->
+    <div class="grid">
+      <a class="p-card" href="#">
+        <div class="p-cover c1"><b>A</b><span class="note">封面色块</span></div>
+        <div class="p-body">
+          <h3 class="p-title">Aurora 博客主题</h3>
+          <p class="p-summary">为 Astro 打造的双栏博客主题,内置深浅色、阅读进度与全文搜索,一行配置即可接入 Pagefind。</p>
+          <p class="p-tags"><span>astro</span><span>tailwind</span></p>
+          <p class="p-facts"><span class="ver">v2.4.0</span><span>★ 128</span><span class="dim">MIT</span><span class="dim">TypeScript</span></p>
+        </div>
+      </a>
+      <a class="p-card" href="#">
+        <div class="p-cover c2"><b>拾</b><span class="note">封面色块</span></div>
+        <div class="p-body">
+          <h3 class="p-title">拾光相册</h3>
+          <p class="p-summary">自托管家庭相册服务,支持时间线浏览、人脸聚类与原图直链,单个二进制即可部署。</p>
+          <p class="p-tags"><span>go</span><span>self-hosted</span></p>
+          <p class="p-facts"><span class="ver">v1.3.1</span><span>★ 86</span><span class="dim">GPL-3.0</span><span class="dim">Go</span></p>
+        </div>
+      </a>
+      <a class="p-card" href="#">
+        <div class="p-cover c3"><b>梗</b><span class="note">封面色块</span></div>
+        <div class="p-body">
+          <h3 class="p-title">梗图抽屉</h3>
+          <p class="p-summary">一键收藏时间线梗图的浏览器扩展,支持标签整理与本地全文搜索。</p>
+          <p class="p-tags"><span>chrome-extension</span><span>meme</span></p>
+          <p class="p-facts"><span class="ver">v0.9.0</span><span>★ 42</span><span class="dim">MIT</span><span class="dim">JavaScript</span></p>
+        </div>
+      </a>
+      <a class="p-card" href="#">
+        <div class="p-cover c2"><b>M</b><span class="note">封面色块</span></div>
+        <div class="p-body">
+          <h3 class="p-title">md2pdf</h3>
+          <p class="p-summary">把 Markdown 目录批量排版为 PDF 的小工具,保留标题层级与代码高亮。</p>
+          <p class="p-tags"><span>cli</span><span>pdf</span></p>
+          <p class="p-facts"><span>★ 56</span><span class="dim">Apache-2.0</span><span class="dim">Rust</span></p>
+        </div>
+      </a>
+      <a class="p-card" href="#">
+        <div class="p-cover c1"><b>问</b><span class="note">封面色块</span></div>
+        <div class="p-body">
+          <h3 class="p-title">问答卡片生成器</h3>
+          <p class="p-summary">输入一段笔记,自动排版成适合分享的问答卡片,可导出 PNG 与 SVG。</p>
+          <p class="p-tags"><span>canvas</span><span>note-card</span></p>
+          <p class="p-facts"><span>★ 31</span><span class="dim">MIT</span><span class="dim">TypeScript</span></p>
+        </div>
+      </a>
+      <a class="p-card" href="#">
+        <div class="p-cover c3"><b>L</b><span class="note">封面色块</span></div>
+        <div class="p-body">
+          <h3 class="p-title">Loopdo 循环待办</h3>
+          <p class="p-summary">把待办按「今天 / 本周 / 以后」三栏循环安排的极简任务板。</p>
+          <p class="p-tags"><span>vue</span><span>todo</span></p>
+          <p class="p-facts"><span>★ 18</span><span class="dim">MIT</span><span class="dim">Vue</span></p>
+        </div>
+      </a>
+    </div>
+
+    <nav class="pagination" aria-label="分页">
+      <span>←</span><span class="cur">1</span><a href="#">2</a><a href="#">→</a>
+    </nav>
+  </div>
+
+  <footer class="site-foot">
+    <div class="wrap in">
+      <span>© 2026 粥盐籽</span>
+      <span>由 Astro 驱动 · RSS</span>
+    </div>
+  </footer>
+</section>
+
+<!-- ═══════════════════ 视图:作品详情 ═══════════════════ -->
+<section class="view" data-view="detail">
+
+  <header class="site-head">
+    <div class="wrap bar">
+      <a class="logo" href="#">粥盐籽</a>
+      <nav class="nav">
+        <a href="#">首页</a>
+        <a class="on" href="#">作品</a>
+        <a href="#">文章</a>
+        <a href="#">标签</a>
+        <a href="#">归档</a>
+        <a href="#">搜索</a>
+      </nav>
+    </div>
+  </header>
+
+  <div class="wrap-mid">
+    <a class="back" href="#">← 返回作品列表</a>
+
+    <header class="d-head">
+      <p class="slug">/projects/gh-1001/ · jesongit/aurora-theme</p>
+      <h1>Aurora 博客主题</h1>
+      <p class="d-summary">为 Astro 打造的双栏博客主题,内置深浅色、阅读进度与全文搜索,一行配置即可接入 Pagefind。</p>
+      <div class="d-actions">
+        <a class="btn btn-solid" href="#">GitHub 仓库</a>
+        <a class="btn btn-blue" href="#">访问网站</a>
+        <a class="btn" href="#">阅读文档</a>
+      </div>
+    </header>
+
+    <div class="meta-strip">
+      <div class="meta-cell"><span class="k">VERSION</span><span class="v">v2.4.0</span></div>
+      <div class="meta-cell"><span class="k">PUBLISHED</span><span class="v">2026-08-12</span></div>
+      <div class="meta-cell"><span class="k">LICENSE</span><span class="v">MIT</span></div>
+      <div class="meta-cell"><span class="k">STARS</span><span class="v">128</span></div>
+      <div class="meta-cell"><span class="k">LANGUAGE</span><span class="v">TypeScript</span></div>
+    </div>
+
+    <section class="d-sec">
+      <h2>主要能力</h2>
+      <ul class="feat-list">
+        <li>深浅色主题一键切换,自动跟随系统</li>
+        <li>内置 Pagefind 中文全文搜索</li>
+        <li>文章阅读进度条与代码一键复制</li>
+        <li>构建时自动生成 OG 分享图片</li>
+        <li>响应式布局,移动端深度优化</li>
+        <li>标签、归档与 RSS 全套支持</li>
+      </ul>
+    </section>
+
+    <section class="d-sec prose">
+      <h2>介绍</h2>
+      <h3><span class="mk">为什么写这个主题</span></h3>
+      <p>市面上的博客主题大多功能繁杂、依赖沉重。Aurora 只保留写作真正需要的东西:清晰排版、快速检索与体面的分享卡片,其余一切都可以通过配置关闭。</p>
+      <pre><code>// astro.config.ts
+import aurora from "aurora-theme";
+
+export default defineConfig({
+  integrates: [aurora({ search: "pagefind" })],
+});</code></pre>
+      <blockquote>少即是多——每一行默认样式都要为自己的存在辩护。</blockquote>
+      <h3><span class="mk">快速开始</span></h3>
+      <ul>
+        <li>克隆模板仓库并安装依赖;</li>
+        <li>修改 <code>src/config.ts</code> 中的站点信息;</li>
+        <li>运行 <code>pnpm dev</code> 即可本地预览。</li>
+      </ul>
+    </section>
+
+    <section class="d-sec">
+      <h2>截图</h2>
+      <div class="shots">
+        <figure><div class="ph">首 页 示 意</div><figcaption>首页 · 双栏布局与精选列表</figcaption></figure>
+        <figure><div class="ph">文 章 页 示 意</div><figcaption>文章页 · 阅读进度与代码高亮</figcaption></figure>
+      </div>
+    </section>
+
+    <section class="d-sec">
+      <h2>技术信息</h2>
+      <div class="chip-row">
+        <span class="chip hot">TypeScript</span>
+        <span class="chip hot">Astro</span>
+        <span class="chip hot">Tailwind CSS</span>
+        <span class="chip topic">#astro</span>
+        <span class="chip topic">#tailwind</span>
+        <span class="chip topic">#blog-theme</span>
+      </div>
+    </section>
+
+    <!-- 组件:ProjectDownloads(版本与下载,仅在有正式 Release 时渲染) -->
+    <section class="d-sec">
+      <h2>版本与下载</h2>
+      <div class="release">
+        <div class="release-top">
+          <span class="ver">v2.4.0</span>
+          <span class="date">2026-08-12 发布</span>
+          <a class="gh" href="#">GitHub Release →</a>
+        </div>
+        <ul class="rel-notes">
+          <li>新增:归档页按年份折叠</li>
+          <li>修复:暗色模式下代码块对比度不足</li>
+          <li>升级:适配 Astro 5.16</li>
+        </ul>
+        <div class="dl-groups">
+          <details class="dl-group" open>
+            <summary><span class="mk">▶</span>Windows<span class="cnt">2 个文件</span></summary>
+            <div class="dl-row"><span class="name">Aurora.Setup.2.4.0.exe</span><span class="size">24.6 MB</span><a href="#">下载</a></div>
+            <div class="dl-row"><span class="name">Aurora-2.4.0-win-x64.msi</span><span class="size">26.1 MB</span><a href="#">下载</a></div>
+          </details>
+          <details class="dl-group">
+            <summary><span class="mk">▶</span>macOS<span class="cnt">1 个文件</span></summary>
+            <div class="dl-row"><span class="name">Aurora-2.4.0-macos-universal.dmg</span><span class="size">31.8 MB</span><a href="#">下载</a></div>
+          </details>
+          <details class="dl-group">
+            <summary><span class="mk">▶</span>Linux<span class="cnt">2 个文件</span></summary>
+            <div class="dl-row"><span class="name">Aurora-2.4.0-linux-x86_64.AppImage</span><span class="size">29.3 MB</span><a href="#">下载</a></div>
+            <div class="dl-row"><span class="name">aurora_2.4.0_amd64.deb</span><span class="size">27.5 MB</span><a href="#">下载</a></div>
+          </details>
+          <details class="dl-group">
+            <summary><span class="mk">▶</span>其他附件<span class="cnt">1 个文件</span></summary>
+            <div class="dl-row"><span class="name">theme-gallery-pack.zip</span><span class="size">4.2 MB</span><a href="#">下载</a></div>
+          </details>
+          <details class="dl-group">
+            <summary><span class="mk">▶</span>校验与其他文件<span class="cnt">2 个文件</span></summary>
+            <div class="dl-row"><span class="name">SHA256SUMS.txt</span><span class="size">1.2 KB</span><a href="#">下载</a></div>
+            <div class="dl-row"><span class="name">SHA256SUMS.sig</span><span class="size">0.6 KB</span><a href="#">下载</a></div>
+          </details>
+        </div>
+        <div class="src-row">
+          源代码:<a href="#">Source code (zip)</a><a href="#">Source code (tar.gz)</a>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <footer class="site-foot">
+    <div class="wrap in">
+      <span>© 2026 粥盐籽</span>
+      <span>由 Astro 驱动 · RSS</span>
+    </div>
+  </footer>
+</section>
+
+<script>
+(() => {
+  const views = [...document.querySelectorAll("[data-view]")];
+  const btns = [...document.querySelectorAll("[data-view-btn]")];
+  const show = id => {
+    views.forEach(v => v.classList.toggle("is-active", v.dataset.view === id));
+    btns.forEach(b => b.classList.toggle("is-active", b.dataset.viewBtn === id));
+    window.scrollTo({ top: 0 });
+  };
+  btns.forEach(b => b.addEventListener("click", () => {
+    history.replaceState(null, "", "#" + b.dataset.viewBtn);
+    show(b.dataset.viewBtn);
+  }));
+  const h = location.hash.slice(1);
+  show(["home", "list", "detail"].includes(h) ? h : "home");
+  document.querySelector("[data-theme-toggle]")?.addEventListener("click", () => {
+    const r = document.documentElement;
+    r.setAttribute("data-theme", r.getAttribute("data-theme") === "dark" ? "light" : "dark");
+  });
+})();
+</script>
+</body>
+</html>

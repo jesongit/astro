@@ -1,0 +1,58 @@
+---
+/**
+ * /admin 管理页(计划 §10.1):
+ * 候选列表 / 展示与精选切换 / 排序 / 手动同步 / 事件确认。
+ * 页面必须按需渲染以经过 middleware 鉴权——绝不预渲染后靠前端隐藏(§3.2)。
+ */
+import AdminLayout from "@/layouts/AdminLayout.astro";
+import { SITE } from "@/config";
+
+export const prerender = false;
+---
+
+<AdminLayout title={`作品管理 | ${SITE.title}`}>
+  <main class="mx-auto w-full max-w-5xl px-4 py-8">
+    <header class="mb-6 flex flex-wrap items-baseline justify-between gap-3">
+      <h1 class="font-serif text-2xl font-bold tracking-wide">作品管理</h1>
+      <div class="flex items-center gap-3 text-sm text-foreground/60">
+        <span id="admin-identity">…</span>
+        <button id="btn-full-sync" class="btn-line" type="button"
+          >全量同步</button
+        >
+        <span id="sync-state" aria-live="polite"></span>
+      </div>
+    </header>
+
+    <section class="mb-4 flex flex-wrap items-center gap-2 text-sm">
+      <input
+        id="filter-q"
+        type="search"
+        placeholder="按仓库名/ID 过滤…"
+        class="min-w-48 flex-1 border border-border bg-transparent px-3 py-2"
+      />
+      <select
+        id="filter-status"
+        class="border border-border bg-background px-3 py-2"
+      >
+        <option value="all">全部</option>
+        <option value="visible">已展示</option>
+        <option value="hidden">隐藏</option>
+        <option value="featured">精选</option>
+        <option value="enhanced">增强模式</option>
+        <option value="config_error">配置错误</option>
+        <option value="sync_error">同步异常</option>
+      </select>
+      <button id="btn-reload" class="btn-line" type="button">刷新</button>
+    </section>
+
+    <p id="list-meta" class="mb-3 text-xs text-foreground/60"></p>
+    <div id="repos" class="flex flex-col gap-3"></div>
+    <p
+      id="error"
+      class="mt-4 hidden border border-accent/50 bg-muted p-4 text-sm"
+    >
+    </p>
+  </main>
+
+  <script src="@/scripts/admin.ts"></script>
+</AdminLayout>

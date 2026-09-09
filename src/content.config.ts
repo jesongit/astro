@@ -5,6 +5,8 @@ import { SITE } from "@/config";
 export const BLOG_PATH = "src/data/blog";
 
 const blog = defineCollection({
+  // 注:文件名 glob 无法排除 _drafts/ 的后代,_drafts 排除由
+  // src/utils/postFilter.ts 的路径判断统一处理(计划 §2.3)。
   loader: glob({ pattern: "**/[^_]*.md", base: `./${BLOG_PATH}` }),
   schema: ({ image }) =>
     z.object({

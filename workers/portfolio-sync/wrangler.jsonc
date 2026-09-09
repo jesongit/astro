@@ -1,0 +1,51 @@
+{
+  // 独立定时同步 Worker(计划 §13.3)。
+  // namespace ID 必须与根 wrangler.jsonc 的生产/预览值一致,由操作者填写;
+  // SYNC_ENABLED 生产上线前保持 "false",首次同步验收后再改 "true"。
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "portfolio-sync",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-09-08",
+  "compatibility_flags": ["nodejs_compat"],
+  "workers_dev": false,
+  "preview_urls": false,
+  "triggers": { "crons": ["* * * * *"] },
+  "kv_namespaces": [
+    {
+      "binding": "PORTFOLIO_CONTROL",
+      "id": "df503d6e96044f14a0d2ca80b3b5a4ae",
+    },
+    { "binding": "PORTFOLIO_CACHE", "id": "9281f24d065c4a69af0ad5b9ba7dd92b" },
+    { "binding": "PORTFOLIO_JOBS", "id": "dc8fa48729824c2b96c7fdeb4ced286d" },
+  ],
+  "vars": {
+    "GITHUB_OWNER": "jesongit",
+    "GITHUB_OWNER_TYPE": "user",
+    "GITHUB_API_VERSION": "2026-03-10",
+    "SYNC_ENABLED": "false",
+  },
+  "env": {
+    "preview": {
+      "kv_namespaces": [
+        {
+          "binding": "PORTFOLIO_CONTROL",
+          "id": "9c9db59639bf45d497340d4b50a887a7",
+        },
+        {
+          "binding": "PORTFOLIO_CACHE",
+          "id": "dc25fade92514d8781ee0a6efb91bad7",
+        },
+        {
+          "binding": "PORTFOLIO_JOBS",
+          "id": "c784e70dbc354451892fa2d1a09b18f5",
+        },
+      ],
+      "vars": {
+        "GITHUB_OWNER": "jesongit",
+        "GITHUB_OWNER_TYPE": "user",
+        "GITHUB_API_VERSION": "2026-03-10",
+        "SYNC_ENABLED": "false",
+      },
+    },
+  },
+}

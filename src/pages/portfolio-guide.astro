@@ -1,0 +1,116 @@
+---
+/**
+ * /portfolio-guide/(计划 §6.1):
+ * 基础/增强模式说明、最小与完整示例、可复制提示词。
+ * 纯静态页面,不访问 KV,无需 Access。
+ */
+import Layout from "@/layouts/Layout.astro";
+import Header from "@/components/Header.astro";
+import Footer from "@/components/Footer.astro";
+import Main from "@/layouts/Main.astro";
+import { SITE } from "@/config";
+import { buildPromptText, buildSpec } from "@/lib/portfolio/protocol";
+
+const spec = buildSpec(SITE.website);
+const promptText = buildPromptText(SITE.website);
+const minimalExample = JSON.stringify(spec.examples.minimal, null, 2);
+const fullExample = JSON.stringify(spec.examples.full, null, 2);
+---
+
+<Layout
+  title={`作品接入指南 | ${SITE.title}`}
+  description="如何把你的开源项目接入本站作品展示:基础模式无需任何文件,增强模式可选。"
+>
+  <Header />
+  <Main
+    pageTitle="作品接入指南"
+    pageDesc="基础模式无需任何文件;增强模式在项目里放一份可选配置,内容更丰富。"
+  >
+    <section class="project-prose">
+      <h3 id="basic">基础模式(默认)</h3>
+      <p>
+        仓库默认隐藏。你在管理页把它设为展示后,网站读取 GitHub 事实(名称、
+        Description、Topics、语言、License、Stars)和安全渲染的 README 作为内容,
+        版本与附件来自 GitHub Releases。你不需要在本仓库做任何改动。
+      </p>
+
+      <h3 id="enhanced">增强模式(可选)</h3>
+      <p>
+        在项目默认分支创建 <code>{spec.entryFile}</code
+        >,校验通过后按字段覆盖基础内容;
+        校验失败不会影响已有展示。文件不影响发布状态:展示、精选与排序始终由管理页决定。
+      </p>
+
+      <h3 id="limits">容量与约束</h3>
+      <ul>
+        <li>
+          配置 ≤ {spec.limits.configMaxBytes / 1024} KiB;增强正文 ≤ {
+            spec.limits.bodyMaxBytes / 1024
+          } KiB;
+        </li>
+        <li>
+          单图 ≤ 2 MiB,截图合计 ≤ 8 MiB,仅支持 .portfolio/assets/ 下的
+          png/jpg/webp;
+        </li>
+        <li>只描述已实现并能证实的能力,不确定的内容留空,不虚构。</li>
+      </ul>
+
+      <h3 id="minimal">最小配置</h3>
+      <pre><code>{minimalExample}</code></pre>
+
+      <h3 id="full">完整示例(需替换为真实资料)</h3>
+      <pre><code>{fullExample}</code></pre>
+
+      <h3 id="prompt">复制提示词,在项目本地交给 AI</h3>
+      <p>
+        也可以直接访问 <a href={spec.promptUrl}>{spec.promptPath}</a> 获取纯文本。
+      </p>
+    </section>
+
+    <div class="relative my-6">
+      <pre
+        id="portfolio-prompt"
+        class="overflow-x-auto border border-border bg-muted p-4.5 font-mono text-[13px] leading-relaxed">{promptText}</pre>
+      <button
+        id="copy-prompt-btn"
+        type="button"
+        class="btn-line absolute top-3 right-3 bg-background"
+        data-copy-target="portfolio-prompt"
+      >
+        复制
+      </button>
+    </div>
+
+    <p class="mb-8 text-sm text-foreground/60">
+      Schema 与规范目录:
+      <a
+        class="text-accent underline decoration-dashed underline-offset-4"
+        href={spec.schemaUrl}>{spec.schemaUrl}</a
+      >
+      ·
+      <a
+        class="text-accent underline decoration-dashed underline-offset-4"
+        href={spec.specUrl}>{spec.specPath}</a
+      >
+    </p>
+  </Main>
+  <Footer />
+</Layout>
+
+<script>
+  document.addEventListener("astro:page-load", () => {
+    const btn = document.querySelector<HTMLButtonElement>("#copy-prompt-btn");
+    const target = document.querySelector<HTMLElement>(
+      `#${btn?.dataset.copyTarget ?? ""}`
+    );
+    if (!btn || !target) return;
+    btn.addEventListener("click", async () => {
+      await navigator.clipboard.writeText(target.textContent ?? "");
+      const original = btn.textContent;
+      btn.textContent = "已复制";
+      setTimeout(() => {
+        btn.textContent = original;
+      }, 1500);
+    });
+  });
+</script>

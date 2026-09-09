@@ -1,0 +1,123 @@
+---
+/**
+ * 搜索页「作品」结果区(计划 §12.2):
+ * - 输入防抖 250ms,取消旧请求(AbortController);
+ * - 失败不影响博客搜索;结果不写 localStorage/Service Worker/长期缓存;
+ * - 服务器只返回通过发布门禁的作品。
+ */
+---
+
+<section
+  id="project-search"
+  class="mt-10"
+  aria-labelledby="project-search-heading"
+>
+  <h2 id="project-search-heading" class="text-lg font-semibold">搜索作品</h2>
+  <form
+    id="project-search-form"
+    method="get"
+    action="/projects/"
+    role="search"
+    class="mt-3 flex gap-2"
+  >
+    <input
+      id="project-search-input"
+      type="search"
+      name="q"
+      placeholder="按标题、摘要或标签搜索作品…"
+      autocomplete="off"
+      class="min-w-0 flex-1 border border-border bg-transparent px-3 py-2 text-sm placeholder:text-foreground/50"
+    />
+    <button type="submit" class="btn-line">搜索</button>
+  </form>
+  <div
+    id="project-search-status"
+    class="mt-2 text-xs text-foreground/60"
+    aria-live="polite"
+  >
+  </div>
+  <ul id="project-search-results" class="mt-2 flex flex-col"></ul>
+</section>
+
+<script>
+  const form = document.querySelector<HTMLFormElement>("#project-search-form");
+  const input = document.querySelector<HTMLInputElement>(
+    "#project-search-input"
+  );
+  const statusEl = document.querySelector<HTMLElement>(
+    "#project-search-status"
+  );
+  const listEl = document.querySelector<HTMLUListElement>(
+    "#project-search-results"
+  );
+  if (form && input && statusEl && listEl) {
+    let controller: AbortController | null = null;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+
+    const render = (
+      results: {
+        href: string;
+        title: string;
+        summary: string;
+        topics: string[];
+      }[]
+    ) => {
+      listEl.innerHTML = "";
+      for (const r of results) {
+        const li = document.createElement("li");
+        li.className = "border-b border-border py-3";
+        li.innerHTML = `
+          <a class="text-accent hover:underline underline-offset-4" href="${r.href}">${r.title}</a>
+          <p class="text-sm text-foreground/70">${r.summary}</p>
+          ${r.topics.length ? `<p class="mt-1 text-xs text-foreground/50">${r.topics.map(t => `#${t}`).join(" ")}</p>` : ""}
+        `;
+        listEl.append(li);
+      }
+    };
+
+    const run = async () => {
+      const q = input.value.trim();
+      controller?.abort();
+      if (q.length < 2) {
+        statusEl.textContent = "";
+        listEl.innerHTML = "";
+        return;
+      }
+      controller = new AbortController();
+      try {
+        statusEl.textContent = "搜索中…";
+        const response = await fetch(
+          `/api/projects/search?q=${encodeURIComponent(q)}`,
+          {
+            signal: controller.signal,
+          }
+        );
+        const data = (await response.json()) as {
+          results: {
+            href: string;
+            title: string;
+            summary: string;
+            topics: string[];
+          }[];
+        };
+        render(data.results);
+        statusEl.textContent =
+          data.results.length > 0
+            ? `找到 ${data.results.length} 件作品`
+            : "没有匹配的作品";
+      } catch (e) {
+        if ((e as Error).name === "AbortError") return;
+        statusEl.textContent = "作品搜索暂不可用,文章搜索不受影响。";
+      }
+    };
+
+    input.addEventListener("input", () => {
+      clearTimeout(timer);
+      timer = setTimeout(() => void run(), 250);
+    });
+    form.addEventListener("submit", e => {
+      e.preventDefault();
+      void run();
+    });
+  }
+</script>

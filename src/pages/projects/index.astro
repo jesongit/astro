@@ -1,0 +1,120 @@
+---
+/**
+ * /projects/ 作品列表(计划 §11.2,按需渲染):
+ * - 首屏服务端输出;GET 查询筛选;q/tags 由客户端提交,这里按 URL 读取;
+ * - 按人工顺序,每页 12 项;未匹配/无作品给出设计好的空状态;
+ * - 任意筛选组合 noindex,middleware 对本路由统一 no-store。
+ */
+import Layout from "@/layouts/Layout.astro";
+import Header from "@/components/Header.astro";
+import Footer from "@/components/Footer.astro";
+import ProjectGrid from "@/components/portfolio/ProjectGrid.astro";
+import ProjectFilter from "@/components/portfolio/ProjectFilter.astro";
+import { SITE } from "@/config";
+import { listPublicProjects } from "@/lib/portfolio/view";
+
+export const prerender = false;
+
+const url = new URL(Astro.request.url);
+const q = (url.searchParams.get("q") ?? "").trim();
+const tag = url.searchParams.get("tag") ?? "";
+const stack = url.searchParams.get("stack") ?? "";
+const filtered = Boolean(q || tag || stack);
+
+const allProjects = await listPublicProjects(Astro.locals);
+
+const topics = [...new Set(allProjects.flatMap(p => p.topics))].sort();
+const stacks = [...new Set(allProjects.flatMap(p => p.techStack))].sort();
+
+let pageProjects = allProjects;
+if (filtered) {
+  const qNorm = q.toLowerCase();
+  pageProjects = allProjects.filter(p => {
+    if (q) {
+      const haystack = [p.title, p.summary, ...p.topics, ...p.techStack]
+        .join("\n")
+        .toLowerCase();
+      if (!haystack.includes(qNorm)) return false;
+    }
+    if (tag && !p.topics.includes(tag)) return false;
+    if (stack && !p.techStack.includes(stack)) return false;
+    return true;
+  });
+}
+
+const PAGE_SIZE = 12;
+const page = 1; // 分页由后续 /projects/2/ 路径扩展;当前规模内单页
+const totalPages = Math.max(1, Math.ceil(pageProjects.length / PAGE_SIZE));
+pageProjects = pageProjects.slice(0, PAGE_SIZE);
+---
+
+<Layout
+  title={`作品 · ${SITE.title}`}
+  description={`${SITE.author} 的开源作品集:博客主题、命令行工具与浏览器扩展。`}
+  structuredData={{
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    name: `作品 · ${SITE.title}`,
+    url: new URL(Astro.url.pathname, SITE.website).toString(),
+  }}
+>
+  <Header />
+  <main id="main-content" class="app-layout-wide pt-16">
+    <div class="pb-9">
+      <p class="kicker">PROJECTS · 按人工顺序排列</p>
+      <h1
+        class="mt-5 mb-3 font-serif text-4xl font-bold tracking-wide sm:text-5xl"
+      >
+        全部作品
+      </h1>
+      <p class="text-sm text-foreground/60">
+        共 {allProjects.length} 个作品{
+          filtered && ` · 筛选结果 ${pageProjects.length} 项`
+        }
+        · 每页 {PAGE_SIZE} 项 · 第 {page} / {totalPages} 页
+      </p>
+    </div>
+
+    <ProjectFilter topics={topics} stacks={stacks} />
+
+    <ProjectGrid projects={pageProjects} />
+
+    {
+      pageProjects.length === 0 && (
+        <div class="border border-border p-10 text-center">
+          <p class="text-sm text-foreground/70">
+            {filtered
+              ? "没有符合筛选条件的作品,试试放宽条件。"
+              : "暂无可展示的作品,稍后再来看看。"}
+          </p>
+          {filtered && (
+            <a class="btn-line mt-5" href="/projects/">
+              清除筛选
+            </a>
+          )}
+        </div>
+      )
+    }
+
+    {
+      totalPages > 1 && (
+        <nav
+          class="flex items-center justify-center gap-2 py-11 font-mono text-[13px]"
+          aria-label="分页"
+        >
+          <span class="grid size-9 place-items-center border border-border text-foreground/50">
+            ←
+          </span>
+          <span
+            class="grid size-9 place-items-center border border-accent text-accent"
+            aria-current="page"
+          >
+            1
+          </span>
+          {pageProjects.length === 0 && ""}
+        </nav>
+      )
+    }
+  </main>
+  <Footer />
+</Layout>

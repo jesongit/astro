@@ -4,11 +4,22 @@
 # Except these files & folders
 !/src
 !/public
+!/scripts
+!/workers
+!/tests
 !/.github
 !tsconfig.json
 !astro.config.ts
+!playwright.config.ts
+!vitest.config.ts
+!vitest.worker.config.ts
 !.prettierrc.mjs
 !package.json
 !.prettierrc
 !eslint.config.js
+!pnpm-workspace.yaml
+!wrangler.jsonc
 !README.md
+
+# 博客文章不参与 Prettier(避免改动已发布内容)
+/src/data/blog/

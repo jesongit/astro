@@ -1,0 +1,821 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>风格 G · 梦绘 Anime — 作品界面模板</title>
+<style>
+/* ═══════════════════════════════════════════
+   风格 G 「梦绘」— 二次元 / 手帐贴纸风
+   结构:个人资料卡英雄区 · 贴纸卡册 · 拍立得截图 · 道具库下载
+   ═══════════════════════════════════════════ */
+:root {
+  --sans: "PingFang SC", "Microsoft YaHei UI", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif;
+  --mono: ui-monospace, Consolas, "Cascadia Code", monospace;
+}
+:root, html[data-theme="light"] {
+  --bg: #fdf4f8;
+  --bg2: #eef7fd;
+  --ink: #454059;
+  --muted: #918aa8;
+  --card: #ffffff;
+  --line: #f2dfeb;
+  --pink: #f272a8;
+  --pink-soft: #fde3ef;
+  --sky: #4fb3e8;
+  --sky-soft: #ddeffb;
+  --butter: #f2b93b;
+  --butter-soft: #fdf0d5;
+  --mint: #4fc08d;
+  --mint-soft: #ddf3e8;
+  --lav: #9a7fe8;
+  --lav-soft: #ebe4fb;
+  --shadow: 0 10px 30px rgba(242, 114, 168, .14);
+}
+html[data-theme="dark"] {
+  --bg: #211d36;
+  --bg2: #1d2233;
+  --ink: #efecf8;
+  --muted: #a49ec4;
+  --card: #2c2849;
+  --line: #3d3760;
+  --pink: #ff8fc0;
+  --pink-soft: #453252;
+  --sky: #6cc8f0;
+  --sky-soft: #2c3e56;
+  --butter: #ffd166;
+  --butter-soft: #4a3f2c;
+  --mint: #7bd8a8;
+  --mint-soft: #2d463c;
+  --lav: #b79ff0;
+  --lav-soft: #3c335c;
+  --shadow: 0 10px 30px rgba(0, 0, 0, .35);
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: var(--sans); color: var(--ink); font-size: 15px; line-height: 1.75;
+  background:
+    radial-gradient(ellipse 42% 30% at 12% 4%, color-mix(in srgb, var(--pink) 16%, transparent), transparent),
+    radial-gradient(ellipse 40% 30% at 90% 12%, color-mix(in srgb, var(--sky) 16%, transparent), transparent),
+    radial-gradient(ellipse 46% 34% at 78% 88%, color-mix(in srgb, var(--lav) 13%, transparent), transparent),
+    linear-gradient(160deg, var(--bg), var(--bg2));
+  min-height: 100vh; -webkit-font-smoothing: antialiased;
+}
+a { color: inherit; text-decoration: none; }
+:focus-visible { outline: 3px solid var(--sky); outline-offset: 3px; border-radius: 8px; }
+::selection { background: var(--pink); color: #fff; }
+
+/* ── 预览控制台(非设计一部分) ── */
+.mockbar { position: sticky; top: 0; z-index: 99; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; background: #262238; color: #f0edf8; padding: 10px 20px; font-size: 13px; }
+.mockbar .tag { font-size: 10px; letter-spacing: .25em; padding: 3px 8px; border: 1px solid #56506e; color: #b0aac8; }
+.mockbar strong { font-weight: 600; }
+.mock-tabs { display: flex; gap: 4px; margin-left: auto; }
+.mock-tabs button, .mock-theme { background: none; border: 1px solid transparent; color: #b0aac8; font: inherit; padding: 4px 12px; cursor: pointer; border-radius: 999px; }
+.mock-tabs button:hover { color: #fff; }
+.mock-tabs button.is-active { border-color: #56506e; color: #fff; }
+.mock-theme { border-color: #56506e; }
+
+.view { display: none; }
+.view.is-active { display: block; }
+
+.wrap { max-width: 1080px; margin: 0 auto; padding: 0 24px; }
+
+/* ── 悬浮胶囊导航 ── */
+.floatnav { position: sticky; top: 12px; z-index: 20; margin: 16px auto 0; max-width: 1080px; padding: 0 24px; }
+.floatnav .bar {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  background: var(--card); border: 2px solid var(--ink); border-radius: 999px;
+  padding: 10px 22px; box-shadow: 4px 5px 0 color-mix(in srgb, var(--pink) 55%, transparent);
+}
+.logo { display: flex; align-items: center; gap: 10px; font-weight: 900; font-size: 17px; letter-spacing: .04em; }
+.logo .face { width: 30px; height: 30px; border-radius: 50%; background: linear-gradient(135deg, var(--pink), var(--lav)); display: grid; place-items: center; color: #fff; font-size: 14px; }
+.nav { display: flex; gap: 4px; flex-wrap: wrap; font-size: 13.5px; font-weight: 700; }
+.nav a { padding: 6px 15px; border-radius: 999px; color: var(--muted); transition: all .15s; }
+.nav a:hover { color: var(--ink); background: var(--pink-soft); }
+.nav a.on { color: #fff; background: linear-gradient(120deg, var(--pink), var(--lav)); }
+
+/* ── 区块标题:糖果标签 ── */
+.sec { padding: 58px 0 8px; }
+.sec-head { display: flex; align-items: center; gap: 16px; margin-bottom: 28px; flex-wrap: wrap; }
+.sec-badge { font-size: 17px; font-weight: 900; letter-spacing: .06em; background: var(--card); border: 2px solid var(--ink); border-radius: 999px; padding: 6px 22px; box-shadow: 3px 4px 0 var(--pink-soft); }
+.sec-badge i { font-style: normal; color: var(--pink); margin-right: 6px; }
+.sec-head .en { font-family: var(--mono); font-size: 10.5px; letter-spacing: .3em; color: var(--muted); }
+.sec-head .line { flex: 1; min-width: 40px; height: 3px; border-radius: 99px; background: repeating-linear-gradient(90deg, var(--line) 0 10px, transparent 10px 16px); }
+
+/* ── 首页:资料卡 + 状态面板 ── */
+.hero { display: grid; grid-template-columns: 5fr 7fr; gap: 28px; padding: 44px 0 10px; align-items: stretch; }
+.profile {
+  background: var(--card); border: 2px solid var(--ink); border-radius: 26px;
+  padding: 34px 30px; box-shadow: var(--shadow); position: relative;
+  display: flex; flex-direction: column; align-items: center; text-align: center; gap: 12px;
+}
+.profile .ava {
+  width: 128px; height: 128px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--pink), var(--lav));
+  border: 4px dashed var(--card); outline: 3px solid var(--pink);
+  display: grid; place-items: center; color: #fff; font-size: 52px; font-weight: 900;
+}
+.profile h1 { font-size: 30px; font-weight: 900; letter-spacing: .06em; }
+.profile .handle { font-family: var(--mono); font-size: 12px; color: var(--muted); }
+.bubble {
+  position: relative; background: var(--pink-soft); border: 2px solid var(--pink);
+  border-radius: 16px; padding: 10px 18px; font-size: 13.5px; color: var(--ink); margin-top: 8px;
+}
+.bubble::after {
+  content: ""; position: absolute; top: -9px; left: 50%; width: 14px; height: 14px;
+  background: var(--pink-soft); border-left: 2px solid var(--pink); border-top: 2px solid var(--pink);
+  transform: translateX(-50%) rotate(45deg);
+}
+.profile .socials { display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap; justify-content: center; }
+.profile .socials a {
+  width: 42px; height: 42px; border-radius: 50%; display: grid; place-items: center;
+  font-size: 12px; font-weight: 900; color: #fff; transition: transform .15s;
+  box-shadow: 2px 3px 0 rgba(0,0,0,.12);
+}
+.profile .socials a:hover { transform: translateY(-3px) rotate(-4deg); }
+.profile .socials .gh { background: var(--ink); }
+.profile .socials .rss { background: var(--butter); }
+.profile .socials .mail { background: var(--sky); }
+
+.status-panel {
+  background: var(--card); border: 2px solid var(--ink); border-radius: 26px;
+  padding: 30px 34px; box-shadow: var(--shadow); display: flex; flex-direction: column; gap: 18px;
+}
+.status-panel .sp-head { display: flex; align-items: baseline; gap: 12px; }
+.status-panel .sp-head b { font-size: 16px; font-weight: 900; letter-spacing: .1em; }
+.status-panel .sp-head i { font-style: normal; color: var(--pink); }
+.status-panel .sp-head .en { margin-left: auto; font-family: var(--mono); font-size: 10px; letter-spacing: .25em; color: var(--muted); }
+.meter { display: grid; grid-template-columns: 92px 1fr 44px; gap: 14px; align-items: center; font-size: 13px; font-weight: 700; }
+.meter .track { display: block; height: 14px; border-radius: 99px; background: color-mix(in srgb, var(--ink) 8%, transparent); border: 2px solid var(--ink); overflow: hidden; }
+.meter .fill { display: block; height: 100%; border-radius: 99px; }
+.meter .pct { font-family: var(--mono); font-size: 12px; color: var(--muted); text-align: right; }
+.f1 { width: 92%; background: linear-gradient(90deg, var(--pink), var(--lav)); }
+.f2 { width: 86%; background: linear-gradient(90deg, var(--sky), var(--mint)); }
+.f3 { width: 74%; background: linear-gradient(90deg, var(--butter), var(--pink)); }
+.sp-note { border-top: 2px dashed var(--line); padding-top: 14px; color: var(--muted); font-size: 13px; }
+.sp-note b { color: var(--ink); }
+
+/* ── 贴纸卡册(精选作品) ── */
+.album { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 30px 26px; padding-top: 8px; }
+.q-card {
+  position: relative; background: var(--card); border: 2px solid var(--ink); border-radius: 22px;
+  overflow: visible; box-shadow: var(--shadow); transition: transform .2s;
+}
+.q-card:nth-child(odd) { transform: rotate(-1.1deg); }
+.q-card:nth-child(even) { transform: rotate(.9deg); }
+.q-card:hover { transform: rotate(0) translateY(-4px); }
+.tape {
+  position: absolute; top: -12px; left: 50%; width: 110px; height: 24px;
+  transform: translateX(-50%) rotate(-3deg); border-radius: 4px; opacity: .85; z-index: 2;
+}
+.tape.pink { background: color-mix(in srgb, var(--pink) 55%, #fff); }
+.tape.sky { background: color-mix(in srgb, var(--sky) 50%, #fff); }
+.tape.mint { background: color-mix(in srgb, var(--mint) 50%, #fff); }
+.sticker {
+  position: absolute; top: -14px; right: -10px; z-index: 3;
+  background: var(--butter); color: var(--ink); border: 2px solid var(--ink);
+  font-size: 11px; font-weight: 900; letter-spacing: .08em;
+  padding: 4px 12px; border-radius: 999px; transform: rotate(7deg);
+  box-shadow: 2px 3px 0 rgba(0,0,0,.15);
+}
+.q-cover {
+  margin: 12px; border-radius: 14px; border: 2px solid var(--ink);
+  aspect-ratio: 16 / 9; display: grid; place-items: center; position: relative; overflow: hidden;
+}
+.q-cover b { font-size: 50px; font-weight: 900; color: #fff; text-shadow: 2px 3px 0 rgba(0,0,0,.14); }
+.q-cover .spark { position: absolute; color: rgba(255,255,255,.85); font-size: 15px; }
+.q-cover .spark.s1 { top: 10px; left: 14px; }
+.q-cover .spark.s2 { bottom: 12px; right: 20px; font-size: 11px; }
+.q-cover .note { position: absolute; right: 10px; bottom: 8px; font-family: var(--mono); font-size: 9.5px; color: rgba(255,255,255,.75); }
+.q-cover.c1 { background: linear-gradient(135deg, #8ec5f8, #f8a8d0); }
+.q-cover.c2 { background: linear-gradient(135deg, #96e0bc, #f8dfa0); }
+.q-cover.c3 { background: linear-gradient(135deg, #c4aef2, #f2b0d8); }
+.q-cover.c4 { background: linear-gradient(135deg, #f8d8a0, #f2a8b8); }
+.q-cover.c5 { background: linear-gradient(135deg, #9ed8f0, #abe4c4); }
+.q-cover.c6 { background: linear-gradient(135deg, #f0b4e0, #bcb2f4); }
+.q-body { padding: 6px 22px 22px; display: flex; flex-direction: column; gap: 11px; }
+.q-title { font-size: 19px; font-weight: 900; letter-spacing: .02em; }
+.q-title i { font-style: normal; color: var(--pink); margin-right: 6px; }
+.q-sum { font-size: 13px; color: var(--muted); }
+.q-tags { display: flex; flex-wrap: wrap; gap: 7px; }
+.q-tags span { font-family: var(--mono); font-size: 10.5px; font-weight: 700; border-radius: 999px; padding: 2px 11px; }
+.q-tags .t1 { background: var(--sky-soft); color: var(--sky); }
+.q-tags .t2 { background: var(--pink-soft); color: var(--pink); }
+.q-tags .t3 { background: var(--mint-soft); color: var(--mint); }
+.q-facts { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; border-top: 2px dashed var(--line); padding-top: 12px; font-family: var(--mono); font-size: 11.5px; color: var(--muted); }
+.q-facts .ver { background: linear-gradient(120deg, var(--pink), var(--lav)); color: #fff; border-radius: 999px; padding: 1px 11px; font-weight: 700; font-size: 10.5px; }
+.more-row { display: flex; justify-content: center; padding: 40px 0 56px; }
+.btn {
+  display: inline-flex; align-items: center; gap: 9px; font-size: 14px; font-weight: 900;
+  padding: 12px 30px; border-radius: 999px; border: 2px solid var(--ink);
+  background: var(--card); box-shadow: 3px 4px 0 var(--pink-soft); transition: all .15s;
+}
+.btn:hover { transform: translate(-2px, -2px); box-shadow: 5px 6px 0 var(--pink-soft); }
+.btn:active { transform: translate(1px, 2px); box-shadow: 1px 1px 0 var(--pink-soft); }
+.btn-candy { background: linear-gradient(120deg, var(--pink), var(--lav)); color: #fff; border-color: var(--ink); }
+.btn-sky { background: var(--sky-soft); color: var(--ink); }
+
+/* ── 手帐日记(最新文章) ── */
+.diary { display: flex; flex-direction: column; gap: 12px; }
+.d-row {
+  display: flex; align-items: center; gap: 18px; background: var(--card);
+  border: 2px solid var(--ink); border-radius: 999px; padding: 12px 26px 12px 14px;
+  box-shadow: 2px 3px 0 var(--lav-soft); transition: transform .15s;
+}
+.d-row:hover { transform: translateX(6px); box-shadow: 2px 3px 0 var(--pink-soft); }
+.d-row .date {
+  font-family: var(--mono); font-size: 11px; font-weight: 700; color: var(--ink);
+  background: var(--butter-soft); border: 2px solid var(--butter);
+  border-radius: 999px; padding: 4px 13px; white-space: nowrap;
+}
+.d-row h3 { font-size: 15.5px; font-weight: 800; }
+.d-row .heart { margin-left: auto; color: var(--pink); font-size: 14px; }
+
+/* ── 列表页:图鉴 + 糖果筛选 + 剪贴簿 ── */
+.page-head { text-align: center; padding: 60px 0 6px; }
+.page-head h1 { font-size: clamp(32px, 5vw, 46px); font-weight: 900; letter-spacing: .08em; }
+.page-head h1 i { font-style: normal; color: var(--pink); }
+.page-head .sub { color: var(--muted); font-size: 13px; margin-top: 8px; font-weight: 600; }
+.candy-filter {
+  display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; align-items: center;
+  background: var(--card); border: 2px solid var(--ink); border-radius: 26px;
+  padding: 16px 20px; margin: 28px auto 38px; max-width: 860px; box-shadow: var(--shadow);
+}
+.candy-filter .chip { font-size: 12.5px; font-weight: 800; border-radius: 999px; padding: 6px 16px; border: 2px solid transparent; transition: all .15s; }
+.candy-filter .chip:hover { transform: translateY(-2px); }
+.candy-filter .chip.on { background: var(--pink); color: #fff; border-color: var(--ink); }
+.candy-filter .chip.c-sky { background: var(--sky-soft); color: var(--sky); }
+.candy-filter .chip.c-mint { background: var(--mint-soft); color: var(--mint); }
+.candy-filter .chip.c-lav { background: var(--lav-soft); color: var(--lav); }
+.candy-filter .chip.c-butter { background: var(--butter-soft); color: var(--ink); }
+.candy-filter select { font: inherit; font-size: 12.5px; font-weight: 700; color: var(--ink); background: var(--bg); border: 2px solid var(--ink); border-radius: 999px; padding: 6px 14px; }
+.candy-filter input { font: inherit; font-size: 13px; color: var(--ink); background: var(--bg); border: 2px solid var(--ink); border-radius: 999px; padding: 7px 18px; min-width: 150px; flex: 1; }
+.candy-filter input::placeholder { color: var(--muted); }
+.scrapbook { columns: 2; column-gap: 28px; }
+.scrapbook .q-card { break-inside: avoid; margin-bottom: 30px; display: block; }
+.page-nav { display: flex; justify-content: center; align-items: center; gap: 12px; padding: 12px 0 66px; font-weight: 900; }
+.page-nav a, .page-nav span { min-width: 42px; height: 42px; display: grid; place-items: center; border-radius: 50%; border: 2px solid var(--ink); background: var(--card); color: var(--muted); font-size: 13px; }
+.page-nav .cur { background: linear-gradient(120deg, var(--pink), var(--lav)); color: #fff; }
+.page-nav a:hover { background: var(--pink-soft); color: var(--ink); }
+
+/* ── 详情页:档案卡 ── */
+.back {
+  display: inline-flex; align-items: center; gap: 8px; margin-top: 40px;
+  font-size: 13px; font-weight: 800; background: var(--card);
+  border: 2px solid var(--ink); border-radius: 999px; padding: 8px 20px; box-shadow: 2px 3px 0 var(--sky-soft);
+}
+.back:hover { background: var(--sky-soft); }
+.cover-banner {
+  position: relative; margin-top: 24px; border-radius: 28px; border: 2px solid var(--ink);
+  aspect-ratio: 21 / 8; display: grid; place-items: center; overflow: hidden;
+  background: linear-gradient(120deg, #8ec5f8, #f8a8d0 60%, #c4aef2);
+  box-shadow: var(--shadow);
+}
+.cover-banner b { font-size: clamp(60px, 10vw, 96px); font-weight: 900; color: #fff; text-shadow: 3px 4px 0 rgba(0,0,0,.16); }
+.cover-banner .spark { position: absolute; color: rgba(255,255,255,.9); }
+.cover-banner .s1 { top: 16%; left: 8%; font-size: 22px; }
+.cover-banner .s2 { bottom: 18%; right: 12%; font-size: 15px; }
+.cover-banner .s3 { top: 30%; right: 26%; font-size: 12px; }
+.cover-banner .tape { width: 130px; }
+.cover-banner .note { position: absolute; right: 14px; bottom: 10px; font-family: var(--mono); font-size: 10px; color: rgba(255,255,255,.8); }
+.name-row { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; margin-top: 30px; }
+.name-row h1 { font-size: clamp(28px, 5vw, 40px); font-weight: 900; letter-spacing: .03em; }
+.ribbon {
+  background: linear-gradient(120deg, var(--pink), var(--lav)); color: #fff;
+  border: 2px solid var(--ink); border-radius: 999px; padding: 5px 18px;
+  font-family: var(--mono); font-size: 13px; font-weight: 700; transform: rotate(-2deg);
+  box-shadow: 2px 3px 0 rgba(0,0,0,.15);
+}
+.slug-line { font-family: var(--mono); font-size: 12px; color: var(--muted); margin-top: 8px; }
+.summary-bubble {
+  position: relative; background: var(--card); border: 2px solid var(--ink);
+  border-radius: 18px; padding: 16px 22px; margin-top: 22px; font-size: 15px; color: var(--ink);
+  box-shadow: 2px 3px 0 var(--pink-soft);
+}
+.summary-bubble::after {
+  content: ""; position: absolute; top: -10px; left: 46px; width: 16px; height: 16px;
+  background: var(--card); border-left: 2px solid var(--ink); border-top: 2px solid var(--ink);
+  transform: rotate(45deg);
+}
+.stat-candies { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 14px; margin-top: 26px; }
+.candy {
+  background: var(--card); border: 2px solid var(--ink); border-radius: 18px;
+  padding: 14px 16px; text-align: center; box-shadow: 2px 3px 0 var(--line);
+}
+.candy .g { font-size: 17px; display: block; }
+.candy .k { display: block; font-family: var(--mono); font-size: 9.5px; letter-spacing: .22em; color: var(--muted); margin: 4px 0 2px; }
+.candy .v { font-size: 15px; font-weight: 900; }
+.candy.pink { box-shadow: 2px 3px 0 var(--pink-soft); } .candy.pink .g { color: var(--pink); }
+.candy.sky { box-shadow: 2px 3px 0 var(--sky-soft); } .candy.sky .g { color: var(--sky); }
+.candy.butter { box-shadow: 2px 3px 0 var(--butter-soft); } .candy.butter .g { color: var(--butter); }
+.candy.mint { box-shadow: 2px 3px 0 var(--mint-soft); } .candy.mint .g { color: var(--mint); }
+.candy.lav { box-shadow: 2px 3px 0 var(--lav-soft); } .candy.lav .g { color: var(--lav); }
+
+.skills { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px 16px; }
+.skills li { list-style: none; display: flex; gap: 10px; align-items: baseline; background: var(--card); border: 2px solid var(--ink); border-radius: 999px; padding: 9px 20px; font-size: 13.5px; font-weight: 700; box-shadow: 2px 3px 0 var(--mint-soft); }
+.skills li i { font-style: normal; color: var(--mint); }
+
+.prose { max-width: 760px; }
+.prose h3 { font-size: 17px; font-weight: 900; margin: 26px 0 10px; }
+.prose h3 u { text-decoration: underline wavy var(--pink) 2px; text-underline-offset: 6px; }
+.prose p { margin: 10px 0; }
+.prose ul { margin: 10px 0 10px 4px; list-style: none; }
+.prose li { margin: 5px 0; font-weight: 600; }
+.prose li::before { content: "✿ "; color: var(--pink); }
+.prose pre {
+  background: var(--ink); color: #f4f2fa; border-radius: 16px; border: 2px solid var(--ink);
+  padding: 18px 22px; font-family: var(--mono); font-size: 12.5px; overflow-x: auto;
+  margin: 18px 0; box-shadow: 3px 4px 0 var(--pink-soft);
+}
+html[data-theme="dark"] .prose pre { background: #171426; }
+.prose code { font-family: var(--mono); font-size: .9em; background: var(--pink-soft); border-radius: 6px; padding: 1px 7px; }
+.prose pre code { background: none; padding: 0; }
+.prose blockquote { background: var(--pink-soft); border: 2px dashed var(--pink); border-radius: 16px; padding: 12px 20px; margin: 18px 0; font-weight: 700; }
+
+.polaroids { display: flex; gap: 30px; flex-wrap: wrap; }
+.polaroid {
+  background: var(--card); border: 2px solid var(--ink); border-radius: 6px;
+  padding: 10px 10px 14px; box-shadow: var(--shadow); max-width: 320px; flex: 1;
+}
+.polaroid:nth-child(odd) { transform: rotate(-1.6deg); }
+.polaroid:nth-child(even) { transform: rotate(1.4deg); }
+.polaroid:hover { transform: rotate(0) scale(1.02); }
+.polaroid .ph { aspect-ratio: 16 / 10; border-radius: 4px; display: grid; place-items: center; color: #fff; font-family: var(--mono); font-size: 11.5px; letter-spacing: .2em; }
+.polaroid .p1 { background: linear-gradient(135deg, #8ec5f8, #f8a8d0); }
+.polaroid .p2 { background: linear-gradient(135deg, #96e0bc, #f8dfa0); }
+.polaroid figcaption { text-align: center; font-size: 12px; font-weight: 700; color: var(--muted); padding-top: 10px; }
+.polaroid figcaption i { font-style: normal; color: var(--pink); }
+
+/* 道具库下载 */
+.item-box { background: var(--card); border: 2px solid var(--ink); border-radius: 24px; overflow: hidden; box-shadow: var(--shadow); }
+.item-top { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; padding: 18px 24px; background: linear-gradient(120deg, var(--pink-soft), var(--lav-soft)); border-bottom: 2px solid var(--ink); }
+.item-top .ver { font-size: 20px; font-weight: 900; color: var(--pink); }
+.item-top .date { font-family: var(--mono); font-size: 12px; color: var(--muted); }
+.item-top .gh { margin-left: auto; font-size: 12.5px; font-weight: 800; background: var(--card); border: 2px solid var(--ink); border-radius: 999px; padding: 5px 16px; }
+.item-top .gh:hover { background: var(--pink); color: #fff; }
+.item-notes { padding: 12px 24px; display: flex; flex-wrap: wrap; gap: 8px 22px; font-size: 13px; color: var(--muted); border-bottom: 2px dashed var(--line); }
+.item-notes li { list-style: none; }
+.item-notes li::before { content: "✦ "; color: var(--lav); }
+.item-groups { padding: 16px 24px 22px; display: grid; gap: 14px; }
+.ig-head { display: flex; align-items: center; gap: 10px; font-weight: 900; font-size: 13.5px; letter-spacing: .06em; margin-bottom: 8px; }
+.ig-head .tag { color: #fff; border: 2px solid var(--ink); border-radius: 999px; padding: 2px 14px; font-size: 12px; box-shadow: 2px 2px 0 rgba(0,0,0,.12); }
+.ig-head .cnt { font-family: var(--mono); font-size: 10.5px; color: var(--muted); font-weight: 400; }
+.ig-head.win .tag { background: var(--sky); }
+.ig-head.mac .tag { background: var(--lav); }
+.ig-head.lnx .tag { background: var(--mint); }
+.ig-head.etc .tag { background: var(--butter); color: var(--ink); }
+.ig-head.chk .tag { background: var(--muted); }
+.ig-row {
+  display: flex; align-items: center; gap: 14px; background: var(--bg);
+  border: 2px solid var(--line); border-radius: 14px; padding: 9px 14px; margin-bottom: 8px;
+}
+.ig-row .name { font-family: var(--mono); font-size: 12px; font-weight: 700; }
+.ig-row .size { font-family: var(--mono); font-size: 10.5px; color: var(--muted); }
+.ig-row a {
+  margin-left: auto; background: linear-gradient(120deg, var(--pink), var(--lav)); color: #fff;
+  border: 2px solid var(--ink); border-radius: 999px; font-size: 11.5px; font-weight: 900;
+  padding: 4px 16px; box-shadow: 2px 2px 0 rgba(0,0,0,.14); white-space: nowrap;
+}
+.ig-row a:active { transform: translate(1px, 1px); box-shadow: none; }
+.item-src { border-top: 2px dashed var(--line); padding: 14px 24px; font-size: 13px; color: var(--muted); display: flex; gap: 18px; flex-wrap: wrap; }
+.item-src a { font-weight: 800; color: var(--sky); }
+
+/* ── 页脚 ── */
+.site-foot { margin: 70px 0 26px; }
+.site-foot .in {
+  background: var(--card); border: 2px solid var(--ink); border-radius: 999px;
+  max-width: 1080px; margin: 0 auto; padding: 16px 34px;
+  display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px;
+  font-size: 12.5px; font-weight: 700; color: var(--muted); box-shadow: 3px 4px 0 var(--pink-soft);
+}
+
+@media (max-width: 860px) {
+  .hero { grid-template-columns: 1fr; }
+  .scrapbook { columns: 1; }
+  .floatnav .bar { flex-wrap: wrap; border-radius: 24px; }
+  .stat-candies { grid-template-columns: repeat(2, 1fr); }
+}
+</style>
+</head>
+<body>
+
+<div class="mockbar">
+  <span class="tag">MOCKUP</span>
+  <strong>风格 G · 梦绘 Anime</strong>
+  <nav class="mock-tabs">
+    <button data-view-btn="home" class="is-active">首页</button>
+    <button data-view-btn="list">作品图鉴</button>
+    <button data-view-btn="detail">作品档案</button>
+  </nav>
+  <button class="mock-theme" data-theme-toggle>深 / 浅</button>
+</div>
+
+<!-- ═══════════════ 视图:首页(资料卡 + 状态面板 + 贴纸卡册) ═══════════════ -->
+<section class="view is-active" data-view="home">
+
+  <div class="floatnav">
+    <div class="bar">
+      <a class="logo" href="#"><span class="face">粥</span>粥盐籽</a>
+      <nav class="nav">
+        <a class="on" href="#">首页</a>
+        <a href="#">作品</a>
+        <a href="#">文章</a>
+        <a href="#">标签</a>
+        <a href="#">归档</a>
+        <a href="#">搜索</a>
+      </nav>
+    </div>
+  </div>
+
+  <div class="wrap">
+    <section class="hero">
+      <!-- 资料卡 -->
+      <div class="profile">
+        <div class="ava">粥</div>
+        <h1>粥盐籽</h1>
+        <p class="handle">@posase · posase.im</p>
+        <p class="bubble">夜晚潮湿 地面潮湿 空气寂静 树林沉默 ♪</p>
+        <div class="socials">
+          <a class="gh" href="#" aria-label="GitHub">GH</a>
+          <a class="rss" href="#" aria-label="RSS">RSS</a>
+          <a class="mail" href="#" aria-label="Email">@</a>
+        </div>
+      </div>
+
+      <!-- 状态面板 -->
+      <div class="status-panel">
+        <div class="sp-head"><b><i>✦</i> 状态面板</b><span class="en">STATUS</span></div>
+        <div class="meter"><span>主题开发</span><span class="track"><span class="fill f1"></span></span><span class="pct">92%</span></div>
+        <div class="meter"><span>独立工具</span><span class="track"><span class="fill f2"></span></span><span class="pct">86%</span></div>
+        <div class="meter"><span>博客写作</span><span class="track"><span class="fill f3"></span></span><span class="pct">74%</span></div>
+        <p class="sp-note"><b>最近在折腾:</b>给博客主题加归档折叠 · 在学 Rust 写 CLI · 收集时间线上的梗图</p>
+      </div>
+    </section>
+
+    <!-- 组件:ProjectCard(贴纸卡册,精选最多 6) -->
+    <section class="sec">
+      <div class="sec-head">
+        <span class="sec-badge"><i>✦</i>精选卡册</span>
+        <span class="en">FEATURED</span>
+        <span class="line"></span>
+      </div>
+      <div class="album">
+        <a class="q-card" href="#">
+          <span class="tape pink"></span>
+          <span class="sticker">NEW ✦</span>
+          <div class="q-cover c1"><b>A</b><span class="spark s1">✦</span><span class="spark s2">✦</span><span class="note">封面色块</span></div>
+          <div class="q-body">
+            <h3 class="q-title"><i>❀</i>Aurora 博客主题</h3>
+            <p class="q-sum">为 Astro 打造的双栏博客主题,内置深浅色、阅读进度与全文搜索,一行配置即可接入 Pagefind。</p>
+            <p class="q-tags"><span class="t1">astro</span><span class="t2">tailwind</span><span class="t3">blog-theme</span></p>
+            <p class="q-facts"><span class="ver">v2.4.0</span><span>★ 128</span><span>MIT</span><span>TypeScript</span></p>
+          </div>
+        </a>
+        <a class="q-card" href="#">
+          <span class="tape sky"></span>
+          <div class="q-cover c2"><b>拾</b><span class="spark s1">✦</span><span class="spark s2">✦</span><span class="note">封面色块</span></div>
+          <div class="q-body">
+            <h3 class="q-title"><i>❀</i>拾光相册</h3>
+            <p class="q-sum">自托管家庭相册服务,支持时间线浏览、人脸聚类与原图直链,单个二进制即可部署。</p>
+            <p class="q-tags"><span class="t1">go</span><span class="t3">self-hosted</span><span class="t2">gallery</span></p>
+            <p class="q-facts"><span class="ver">v1.3.1</span><span>★ 86</span><span>GPL-3.0</span><span>Go</span></p>
+          </div>
+        </a>
+        <a class="q-card" href="#">
+          <span class="tape mint"></span>
+          <div class="q-cover c3"><b>梗</b><span class="spark s1">✦</span><span class="spark s2">✦</span><span class="note">封面色块</span></div>
+          <div class="q-body">
+            <h3 class="q-title"><i>❀</i>梗图抽屉</h3>
+            <p class="q-sum">一键收藏时间线梗图的浏览器扩展,支持标签整理与本地全文搜索。</p>
+            <p class="q-tags"><span class="t1">chrome-extension</span><span class="t2">meme</span></p>
+            <p class="q-facts"><span class="ver">v0.9.0</span><span>★ 42</span><span>MIT</span><span>JavaScript</span></p>
+          </div>
+        </a>
+      </div>
+      <div class="more-row"><a class="btn btn-candy" href="#">翻开作品图鉴 →</a></div>
+    </section>
+
+    <!-- 手帐日记 -->
+    <section class="sec" style="padding-bottom:0">
+      <div class="sec-head">
+        <span class="sec-badge"><i>❀</i>手帐 · 最近写的</span>
+        <span class="en">DIARY</span>
+        <span class="line"></span>
+      </div>
+      <div class="diary">
+        <a class="d-row" href="#"><span class="date">09-05</span><h3>Pi Agent 快捷键速查</h3><span class="heart">♥</span></a>
+        <a class="d-row" href="#"><span class="date">08-28</span><h3>Claude Code Desktop 桌面版快速上手</h3><span class="heart">♥</span></a>
+        <a class="d-row" href="#"><span class="date">08-20</span><h3>Superpowers 与 GSD 深度总结报告</h3><span class="heart">♥</span></a>
+        <a class="d-row" href="#"><span class="date">08-14</span><h3>AI 网页端转 API 实践</h3><span class="heart">♥</span></a>
+      </div>
+      <div class="more-row"><a class="btn" href="#">全部文章 →</a></div>
+    </section>
+  </div>
+
+  <footer class="site-foot">
+    <div class="in">
+      <span>© 2026 粥盐籽</span>
+      <span>由 Astro 驱动 · RSS ✦</span>
+    </div>
+  </footer>
+</section>
+
+<!-- ═══════════════ 视图:作品图鉴(糖果筛选 + 剪贴簿) ═══════════════ -->
+<section class="view" data-view="list">
+
+  <div class="floatnav">
+    <div class="bar">
+      <a class="logo" href="#"><span class="face">粥</span>粥盐籽</a>
+      <nav class="nav">
+        <a href="#">首页</a>
+        <a class="on" href="#">作品</a>
+        <a href="#">文章</a>
+        <a href="#">标签</a>
+        <a href="#">归档</a>
+        <a href="#">搜索</a>
+      </nav>
+    </div>
+  </div>
+
+  <div class="wrap">
+    <div class="page-head">
+      <h1>作品<i>图鉴</i> ✦</h1>
+      <p class="sub">共 6 件 · 按人工顺序排列 · 每页 12 项</p>
+    </div>
+
+    <!-- 组件:ProjectFilter(糖果筛选,GET 表单示意) -->
+    <form class="candy-filter" method="get" action="/projects/">
+      <a class="chip on" href="#">全部</a>
+      <a class="chip c-sky" href="#">astro</a>
+      <a class="chip c-mint" href="#">go</a>
+      <a class="chip c-lav" href="#">cli</a>
+      <a class="chip c-butter" href="#">chrome-extension</a>
+      <select name="stack" aria-label="按技术栈筛选">
+        <option>全部技术栈</option><option>TypeScript</option><option>Go</option><option>Rust</option><option>JavaScript</option>
+      </select>
+      <input type="text" name="q" placeholder="搜索作品…">
+      <button class="btn btn-candy" type="submit" style="padding:8px 22px">找一下</button>
+    </form>
+
+    <!-- 组件:ProjectGrid(剪贴簿布局) -->
+    <div class="scrapbook">
+      <a class="q-card" href="#">
+        <span class="tape pink"></span>
+        <div class="q-cover c1"><b>A</b><span class="spark s1">✦</span><span class="spark s2">✦</span><span class="note">封面色块</span></div>
+        <div class="q-body">
+          <h3 class="q-title"><i>❀</i>Aurora 博客主题</h3>
+          <p class="q-sum">为 Astro 打造的双栏博客主题,内置深浅色、阅读进度与全文搜索,一行配置即可接入 Pagefind。</p>
+          <p class="q-tags"><span class="t1">astro</span><span class="t2">tailwind</span></p>
+          <p class="q-facts"><span class="ver">v2.4.0</span><span>★ 128</span><span>MIT</span><span>TypeScript</span></p>
+        </div>
+      </a>
+      <a class="q-card" href="#">
+        <span class="tape sky"></span>
+        <div class="q-cover c2"><b>拾</b><span class="spark s1">✦</span><span class="spark s2">✦</span><span class="note">封面色块</span></div>
+        <div class="q-body">
+          <h3 class="q-title"><i>❀</i>拾光相册</h3>
+          <p class="q-sum">自托管家庭相册服务,支持时间线浏览、人脸聚类与原图直链,单个二进制即可部署。</p>
+          <p class="q-tags"><span class="t1">go</span><span class="t3">self-hosted</span></p>
+          <p class="q-facts"><span class="ver">v1.3.1</span><span>★ 86</span><span>GPL-3.0</span><span>Go</span></p>
+        </div>
+      </a>
+      <a class="q-card" href="#">
+        <span class="tape mint"></span>
+        <div class="q-cover c3"><b>梗</b><span class="spark s1">✦</span><span class="spark s2">✦</span><span class="note">封面色块</span></div>
+        <div class="q-body">
+          <h3 class="q-title"><i>❀</i>梗图抽屉</h3>
+          <p class="q-sum">一键收藏时间线梗图的浏览器扩展,支持标签整理与本地全文搜索。</p>
+          <p class="q-tags"><span class="t1">chrome-extension</span><span class="t2">meme</span></p>
+          <p class="q-facts"><span class="ver">v0.9.0</span><span>★ 42</span><span>MIT</span><span>JavaScript</span></p>
+        </div>
+      </a>
+      <a class="q-card" href="#">
+        <span class="tape pink"></span>
+        <div class="q-cover c4"><b>M</b><span class="spark s1">✦</span><span class="spark s2">✦</span><span class="note">封面色块</span></div>
+        <div class="q-body">
+          <h3 class="q-title"><i>❀</i>md2pdf</h3>
+          <p class="q-sum">把 Markdown 目录批量排版为 PDF 的小工具,保留标题层级与代码高亮。</p>
+          <p class="q-tags"><span class="t1">cli</span><span class="t2">pdf</span></p>
+          <p class="q-facts"><span>★ 56</span><span>Apache-2.0</span><span>Rust</span></p>
+        </div>
+      </a>
+      <a class="q-card" href="#">
+        <span class="tape sky"></span>
+        <div class="q-cover c5"><b>问</b><span class="spark s1">✦</span><span class="spark s2">✦</span><span class="note">封面色块</span></div>
+        <div class="q-body">
+          <h3 class="q-title"><i>❀</i>问答卡片生成器</h3>
+          <p class="q-sum">输入一段笔记,自动排版成适合分享的问答卡片,可导出 PNG 与 SVG。</p>
+          <p class="q-tags"><span class="t1">canvas</span><span class="t3">note-card</span></p>
+          <p class="q-facts"><span>★ 31</span><span>MIT</span><span>TypeScript</span></p>
+        </div>
+      </a>
+      <a class="q-card" href="#">
+        <span class="tape mint"></span>
+        <div class="q-cover c6"><b>L</b><span class="spark s1">✦</span><span class="spark s2">✦</span><span class="note">封面色块</span></div>
+        <div class="q-body">
+          <h3 class="q-title"><i>❀</i>Loopdo 循环待办</h3>
+          <p class="q-sum">把待办按「今天 / 本周 / 以后」三栏循环安排的极简任务板。</p>
+          <p class="q-tags"><span class="t1">vue</span><span class="t2">todo</span></p>
+          <p class="q-facts"><span>★ 18</span><span>MIT</span><span>Vue</span></p>
+        </div>
+      </a>
+    </div>
+
+    <nav class="page-nav" aria-label="分页">
+      <span>←</span><span class="cur">1</span><a href="#">2</a><a href="#">→</a>
+    </nav>
+  </div>
+
+  <footer class="site-foot">
+    <div class="in">
+      <span>© 2026 粥盐籽</span>
+      <span>由 Astro 驱动 · RSS ✦</span>
+    </div>
+  </footer>
+</section>
+
+<!-- ═══════════════ 视图:作品档案(封面横幅 + 糖果状态 + 道具库) ═══════════════ -->
+<section class="view" data-view="detail">
+
+  <div class="floatnav">
+    <div class="bar">
+      <a class="logo" href="#"><span class="face">粥</span>粥盐籽</a>
+      <nav class="nav">
+        <a href="#">首页</a>
+        <a class="on" href="#">作品</a>
+        <a href="#">文章</a>
+        <a href="#">标签</a>
+        <a href="#">归档</a>
+        <a href="#">搜索</a>
+      </nav>
+    </div>
+  </div>
+
+  <div class="wrap">
+    <a class="back" href="#">← 回到图鉴</a>
+
+    <!-- 封面横幅 -->
+    <div class="cover-banner">
+      <span class="tape pink" style="left:12%; transform:rotate(-6deg)"></span>
+      <span class="tape sky" style="left:auto; right:10%; transform:rotate(5deg)"></span>
+      <b>A</b>
+      <span class="spark s1">✦</span><span class="spark s2">✦</span><span class="spark s3">✦</span>
+      <span class="note">封面示意</span>
+    </div>
+
+    <header>
+      <div class="name-row">
+        <h1>Aurora 博客主题</h1>
+        <span class="ribbon">✦ v2.4.0</span>
+      </div>
+      <p class="slug-line">/projects/gh-1001/ · jesongit/aurora-theme</p>
+      <div class="summary-bubble">为 Astro 打造的双栏博客主题,内置深浅色、阅读进度与全文搜索,一行配置即可接入 Pagefind。</div>
+    </header>
+
+    <!-- 糖果状态 -->
+    <div class="stat-candies">
+      <div class="candy pink"><span class="g">♪</span><span class="k">VERSION</span><span class="v">v2.4.0</span></div>
+      <div class="candy sky"><span class="g">✦</span><span class="k">PUBLISHED</span><span class="v">2026-08-12</span></div>
+      <div class="candy butter"><span class="g">⚖</span><span class="k">LICENSE</span><span class="v">MIT</span></div>
+      <div class="candy mint"><span class="g">★</span><span class="k">STARS</span><span class="v">128</span></div>
+      <div class="candy lav"><span class="g">⚙</span><span class="k">LANGUAGE</span><span class="v">TypeScript</span></div>
+    </div>
+
+    <div class="more-row" style="justify-content:flex-start; padding:24px 0 8px; gap:12px">
+      <a class="btn btn-candy" href="#">GitHub 仓库</a>
+      <a class="btn btn-sky" href="#">访问网站</a>
+      <a class="btn" href="#">阅读文档</a>
+    </div>
+
+    <section class="sec">
+      <div class="sec-head">
+        <span class="sec-badge"><i>✦</i>技能表</span>
+        <span class="en">FEATURES</span>
+        <span class="line"></span>
+      </div>
+      <ul class="skills">
+        <li><i>★</i>深浅色主题一键切换,自动跟随系统</li>
+        <li><i>★</i>内置 Pagefind 中文全文搜索</li>
+        <li><i>★</i>文章阅读进度条与代码一键复制</li>
+        <li><i>★</i>构建时自动生成 OG 分享图片</li>
+        <li><i>★</i>响应式布局,移动端深度优化</li>
+        <li><i>★</i>标签、归档与 RSS 全套支持</li>
+      </ul>
+    </section>
+
+    <section class="sec prose">
+      <div class="sec-head">
+        <span class="sec-badge"><i>❀</i>介绍</span>
+        <span class="en">STORY</span>
+        <span class="line"></span>
+      </div>
+      <h3><u>为什么写这个主题</u></h3>
+      <p>市面上的博客主题大多功能繁杂、依赖沉重。Aurora 只保留写作真正需要的东西:清晰排版、快速检索与体面的分享卡片,其余一切都可以通过配置关闭。</p>
+      <pre><code>// astro.config.ts
+import aurora from "aurora-theme";
+
+export default defineConfig({
+  integrates: [aurora({ search: "pagefind" })],
+});</code></pre>
+      <blockquote>少即是多——每一行默认样式都要为自己的存在辩护。</blockquote>
+      <h3><u>快速开始</u></h3>
+      <ul>
+        <li>克隆模板仓库并安装依赖;</li>
+        <li>修改 <code>src/config.ts</code> 中的站点信息;</li>
+        <li>运行 <code>pnpm dev</code> 即可本地预览。</li>
+      </ul>
+    </section>
+
+    <section class="sec">
+      <div class="sec-head">
+        <span class="sec-badge"><i>✦</i>照片墙</span>
+        <span class="en">SCREENSHOTS</span>
+        <span class="line"></span>
+      </div>
+      <div class="polaroids">
+        <figure class="polaroid"><div class="ph p1">首 页 示 意</div><figcaption>首页 · 双栏布局 <i>♥</i></figcaption></figure>
+        <figure class="polaroid"><div class="ph p2">文 章 页 示 意</div><figcaption>文章页 · 代码高亮 <i>♥</i></figcaption></figure>
+      </div>
+    </section>
+
+    <!-- 组件:ProjectDownloads(道具库,仅在有正式 Release 时渲染) -->
+    <section class="sec" style="padding-bottom:0">
+      <div class="sec-head">
+        <span class="sec-badge"><i>♪</i>道具库</span>
+        <span class="en">DOWNLOADS</span>
+        <span class="line"></span>
+      </div>
+      <div class="item-box">
+        <div class="item-top">
+          <span class="ver">v2.4.0</span>
+          <span class="date">2026-08-12 发布</span>
+          <a class="gh" href="#">GitHub Release →</a>
+        </div>
+        <ul class="item-notes">
+          <li>新增:归档页按年份折叠</li>
+          <li>修复:暗色模式下代码块对比度不足</li>
+          <li>升级:适配 Astro 5.16</li>
+        </ul>
+        <div class="item-groups">
+          <div>
+            <div class="ig-head win"><span class="tag">Windows</span><span class="cnt">2 个文件</span></div>
+            <div class="ig-row"><span class="name">Aurora.Setup.2.4.0.exe</span><span class="size">24.6 MB</span><a href="#">下载</a></div>
+            <div class="ig-row"><span class="name">Aurora-2.4.0-win-x64.msi</span><span class="size">26.1 MB</span><a href="#">下载</a></div>
+          </div>
+          <div>
+            <div class="ig-head mac"><span class="tag">macOS</span><span class="cnt">1 个文件</span></div>
+            <div class="ig-row"><span class="name">Aurora-2.4.0-macos-universal.dmg</span><span class="size">31.8 MB</span><a href="#">下载</a></div>
+          </div>
+          <div>
+            <div class="ig-head lnx"><span class="tag">Linux</span><span class="cnt">2 个文件</span></div>
+            <div class="ig-row"><span class="name">Aurora-2.4.0-linux-x86_64.AppImage</span><span class="size">29.3 MB</span><a href="#">下载</a></div>
+            <div class="ig-row"><span class="name">aurora_2.4.0_amd64.deb</span><span class="size">27.5 MB</span><a href="#">下载</a></div>
+          </div>
+          <div>
+            <div class="ig-head etc"><span class="tag">其他附件</span><span class="cnt">1 个文件</span></div>
+            <div class="ig-row"><span class="name">theme-gallery-pack.zip</span><span class="size">4.2 MB</span><a href="#">下载</a></div>
+          </div>
+          <div>
+            <div class="ig-head chk"><span class="tag">校验与其他文件</span><span class="cnt">2 个文件</span></div>
+            <div class="ig-row"><span class="name">SHA256SUMS.txt</span><span class="size">1.2 KB</span><a href="#">下载</a></div>
+            <div class="ig-row"><span class="name">SHA256SUMS.sig</span><span class="size">0.6 KB</span><a href="#">下载</a></div>
+          </div>
+        </div>
+        <div class="item-src">
+          源代码:<a href="#">Source code (zip)</a><a href="#">Source code (tar.gz)</a>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <footer class="site-foot">
+    <div class="in">
+      <span>© 2026 粥盐籽</span>
+      <span>由 Astro 驱动 · RSS ✦</span>
+    </div>
+  </footer>
+</section>
+
+<script>
+(() => {
+  const views = [...document.querySelectorAll("[data-view]")];
+  const btns = [...document.querySelectorAll("[data-view-btn]")];
+  const show = id => {
+    views.forEach(v => v.classList.toggle("is-active", v.dataset.view === id));
+    btns.forEach(b => b.classList.toggle("is-active", b.dataset.viewBtn === id));
+    window.scrollTo({ top: 0 });
+  };
+  btns.forEach(b => b.addEventListener("click", () => {
+    history.replaceState(null, "", "#" + b.dataset.viewBtn);
+    show(b.dataset.viewBtn);
+  }));
+  const h = location.hash.slice(1);
+  show(["home", "list", "detail"].includes(h) ? h : "home");
+  document.querySelector("[data-theme-toggle]")?.addEventListener("click", () => {
+    const r = document.documentElement;
+    r.setAttribute("data-theme", r.getAttribute("data-theme") === "dark" ? "light" : "dark");
+  });
+})();
+</script>
+</body>
+</html>

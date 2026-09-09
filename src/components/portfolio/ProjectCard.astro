@@ -1,0 +1,86 @@
+---
+/**
+ * 作品卡片(墨白编辑部风格)。
+ * 缺封面时显示色块 + 标题首字母,不使用伪截图(计划 §11.2)。
+ */
+import type { PublicProject } from "@/lib/portfolio/types";
+
+interface Props {
+  project: PublicProject;
+  heading?: "h2" | "h3";
+}
+
+const { project, heading: Heading = "h3" } = Astro.props;
+const initial = project.title.trim().charAt(0).toUpperCase();
+---
+
+<a
+  href={`/projects/${project.slug}/`}
+  class:list={[
+    "group flex flex-col gap-3.5 bg-background p-6",
+    "transition-colors hover:bg-muted/60",
+  ]}
+>
+  <div
+    class="relative grid aspect-[16/10] place-items-center border border-border bg-muted"
+  >
+    {
+      project.cover ? (
+        <img
+          src={project.cover.src}
+          alt={project.cover.alt}
+          width={project.cover.width}
+          height={project.cover.height}
+          loading="lazy"
+          class="h-full w-full object-cover"
+        />
+      ) : (
+        <span
+          aria-hidden="true"
+          class="font-serif text-6xl font-normal text-foreground/30"
+        >
+          {initial}
+        </span>
+      )
+    }
+  </div>
+
+  <Heading
+    class="font-serif text-[21px] leading-snug font-semibold tracking-wide transition-colors group-hover:text-accent"
+    style={{ viewTransitionName: `project-${project.slug}` }}
+  >
+    {project.title}
+  </Heading>
+
+  <p class="flex-1 text-sm leading-relaxed text-foreground/70">
+    {project.summary}
+  </p>
+
+  {
+    project.topics.length > 0 && (
+      <p class="text-xs tracking-wide text-foreground/60">
+        {project.topics.map(topic => (
+          <span class="me-2">
+            <em class="text-accent not-italic">#</em>
+            {topic}
+          </span>
+        ))}
+      </p>
+    )
+  }
+
+  <p
+    class="flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-border pt-3 font-mono text-[11.5px] text-foreground/60"
+  >
+    {
+      project.release && (
+        <span class="border border-accent/45 px-1.5 text-accent">
+          {project.release.tagName}
+        </span>
+      )
+    }
+    <span>★ {project.github.stars}</span>
+    {project.github.license && <span>{project.github.license}</span>}
+    {project.github.language && <span>{project.github.language}</span>}
+  </p>
+</a>

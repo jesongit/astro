@@ -1,0 +1,26 @@
+---
+/**
+ * 管理页布局(计划 §10.1):
+ * 复用主题但避免管理状态被公共页面切换持久化;响应头由 middleware 加固。
+ */
+import "@/styles/global.css";
+
+interface Props {
+  title: string;
+}
+
+const { title } = Astro.props;
+---
+
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>{title}</title>
+    <meta name="robots" content="noindex, nofollow" />
+  </head>
+  <body class="min-h-svh bg-background font-app text-foreground">
+    <slot />
+  </body>
+</html>

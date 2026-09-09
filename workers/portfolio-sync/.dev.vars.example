@@ -1,0 +1,7 @@
+# Sync Worker 本地变量示例(计划 §13.1)。
+# 复制为 workers/portfolio-sync/.dev.vars;真实 secret 绝不入库。
+GITHUB_TOKEN=local-fake-token
+GITHUB_OWNER=jesongit
+GITHUB_OWNER_TYPE=user
+GITHUB_API_VERSION=2026-03-10
+SYNC_ENABLED=false

@@ -1,0 +1,71 @@
+---
+/**
+ * /projects/gh-<ID>/ 作品详情(计划 §9.1/§11.2,按需渲染):
+ * - 只输出通过发布门禁的作品;不存在/撤下/资格过期 → 真实 404 + noindex;
+ * - 基础与增强模式同一模板;页面请求不直接调用 GitHub。
+ */
+import Layout from "@/layouts/Layout.astro";
+import Header from "@/components/Header.astro";
+import Footer from "@/components/Footer.astro";
+import ProjectDetails from "@/components/portfolio/ProjectDetails.astro";
+import { SITE } from "@/config";
+import { lookupPublicProject } from "@/lib/portfolio/view";
+
+export const prerender = false;
+
+const { slug } = Astro.params;
+const lookup = slug
+  ? await lookupPublicProject(Astro.locals, slug)
+  : { ok: false as const, reason: "not_found" as const };
+
+if (!lookup.ok) {
+  if (lookup.reason === "unavailable") {
+    // payload 未传播 / KV 暂不可读:503 + Retry-After,不解释内部状态(§9.2/§17)
+    return new Response("作品资料暂时无法更新,请稍后重试。", {
+      status: 503,
+      headers: {
+        "Content-Type": "text/plain; charset=utf-8",
+        "Retry-After": "30",
+        "X-Robots-Tag": "noindex",
+      },
+    });
+  }
+  return new Response("Not Found", {
+    status: 404,
+    headers: {
+      "Content-Type": "text/plain; charset=utf-8",
+      "X-Robots-Tag": "noindex",
+    },
+  });
+}
+const project = lookup.project;
+---
+
+<Layout
+  title={`${project.title} · ${SITE.title}`}
+  description={project.summary}
+  structuredData={{
+    "@context": "https://schema.org",
+    // 源码项目用 SoftwareSourceCode,不虚构可安装应用语义(§12.1)
+    "@type": "SoftwareSourceCode",
+    name: project.title,
+    description: project.summary,
+    codeRepository: project.links.github,
+    license: project.github.license
+      ? `https://spdx.org/licenses/${project.github.license}`
+      : undefined,
+    ...(project.release
+      ? {
+          softwareVersion: project.release.tagName,
+          dateModified: project.release.publishedAt || undefined,
+        }
+      : {}),
+    author: { "@type": "Person", name: SITE.author, url: SITE.profile },
+  }}
+>
+  <Header />
+  <main id="main-content">
+    <ProjectDetails project={project} />
+  </main>
+  <Footer />
+</Layout>

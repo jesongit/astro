@@ -1,0 +1,58 @@
+---
+/**
+ * 作品列表 GET 筛选表单(计划 §11.2:服务端输出,GET 查询筛选)。
+ */
+interface Props {
+  topics?: string[];
+  stacks?: string[];
+}
+
+const { topics = [], stacks = [] } = Astro.props;
+---
+
+<form
+  method="get"
+  action="/projects/"
+  role="search"
+  aria-label="筛选作品"
+  class="my-8 flex flex-wrap items-center gap-2.5 border border-border p-3.5"
+>
+  <input
+    type="search"
+    name="q"
+    placeholder="搜索标题、摘要或标签…"
+    class="min-w-44 flex-1 border-b border-border bg-transparent px-0.5 py-1.5 text-sm placeholder:text-foreground/50 focus:outline-none"
+  />
+
+  {
+    topics.length > 0 && (
+      <select
+        name="tag"
+        aria-label="按主题标签筛选"
+        class="border border-border bg-background px-2.5 py-2 text-[13px] text-foreground/70"
+      >
+        <option value="">全部主题</option>
+        {topics.map(topic => (
+          <option value={topic}>{topic}</option>
+        ))}
+      </select>
+    )
+  }
+
+  {
+    stacks.length > 0 && (
+      <select
+        name="stack"
+        aria-label="按技术栈筛选"
+        class="border border-border bg-background px-2.5 py-2 text-[13px] text-foreground/70"
+      >
+        <option value="">全部技术栈</option>
+        {stacks.map(stack => (
+          <option value={stack}>{stack}</option>
+        ))}
+      </select>
+    )
+  }
+
+  <button type="submit" class="btn-line">筛选</button>
+</form>

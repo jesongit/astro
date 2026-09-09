@@ -5,23 +5,25 @@
 
 :root,
 html[data-theme="light"] {
-  --background: #fdfdfd;
-  --foreground: #282728;
-  --accent: #006cac;
-  --muted: #e6e6e6;
-  --border: #ece9e9;
+  --background: #faf8f3;
+  --foreground: #1c1b17;
+  --accent: #b23a25;
+  --muted: #efe9dc;
+  --border: #e4dfd2;
 }
 
 html[data-theme="dark"] {
-  --background: #212737;
-  --foreground: #eaedf3;
-  --accent: #ff6b01;
-  --muted: #343f60;
-  --border: #ab4b08;
+  --background: #191713;
+  --foreground: #eae5d8;
+  --accent: #e0704f;
+  --muted: #2a2720;
+  --border: #37332a;
 }
 
 @theme inline {
   --font-app: var(--font-google-sans-code);
+  --font-serif:
+    Georgia, "Times New Roman", "Songti SC", "STSong", SimSun, serif;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-accent: var(--accent);
@@ -59,8 +61,70 @@ html[data-theme="dark"] {
   @apply mx-auto w-full max-w-app px-4;
 }
 
+/* 作品区专用宽版心:只用于 /projects,不影响文章阅读宽度 */
+@utility app-layout-wide {
+  @apply mx-auto w-full max-w-5xl px-4;
+}
+
 .active-nav {
   @apply underline decoration-wavy decoration-2 underline-offset-8;
+}
+
+@layer components {
+  /* 小节眉标:横线 + 字距拉开的强调小字 */
+  .kicker {
+    @apply flex items-center gap-3.5 text-[11px] tracking-[0.45em] text-accent;
+  }
+  .kicker::before {
+    content: "";
+    @apply h-px w-10 shrink-0 bg-accent;
+  }
+
+  /* 线框按钮(描边 → 实心反转) */
+  .btn-line {
+    @apply inline-flex items-center gap-2.5 border border-foreground px-6 py-2.5 text-xs tracking-[0.25em] transition-colors;
+  }
+  .btn-line:hover {
+    @apply bg-foreground text-background;
+  }
+  .btn-line-accent {
+    @apply border-accent text-accent;
+  }
+  .btn-line-accent:hover {
+    @apply bg-accent text-background;
+  }
+
+  /* 详情页小节标题:衬线标题 + 延伸细线 */
+  .sec-rule-title {
+    @apply mb-5 flex items-center gap-3 font-serif text-xl font-semibold tracking-[0.08em];
+  }
+  .sec-rule-title::after {
+    content: "";
+    @apply h-px flex-1 bg-border;
+  }
+
+  /* 作品介绍正文(安全渲染后的 Markdown HTML) */
+  .project-prose h3 {
+    @apply mt-7 mb-2.5 font-serif text-lg font-semibold tracking-wide;
+  }
+  .project-prose p {
+    @apply my-3;
+  }
+  .project-prose ul {
+    @apply my-3 ms-6 list-disc;
+  }
+  .project-prose li {
+    @apply my-1.5;
+  }
+  .project-prose pre {
+    @apply my-5 overflow-x-auto border border-border bg-muted p-4.5 font-mono text-[13px] leading-relaxed;
+  }
+  .project-prose code {
+    @apply font-mono text-[0.92em];
+  }
+  .project-prose blockquote {
+    @apply my-5 border-s-2 border-accent py-1 ps-5 font-serif text-muted italic;
+  }
 }
 
 /* Source: https://piccalil.li/blog/a-more-modern-css-reset/ */

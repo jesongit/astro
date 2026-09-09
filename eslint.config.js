@@ -14,5 +14,17 @@ export default [
     },
   },
   { rules: { "no-console": "error" } },
-  { ignores: ["dist/**", ".astro", "public/pagefind/**"] },
+  {
+    files: ["**/*.mjs", "tests/**/*.ts", "playwright.config.ts"],
+    rules: { "no-console": "off" },
+  },
+  {
+    ignores: [
+      "dist/**",
+      ".astro",
+      "public/pagefind/**",
+      "workers/**",
+      "tests/e2e/**",
+    ],
+  },
 ];

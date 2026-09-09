@@ -1,0 +1,10 @@
+# 本地 Wrangler Pages 预览的变量示例(计划 §13.1)。
+# 复制为 .dev.vars;真实 secret 绝不入库(.gitignore 已忽略 .dev.vars*)。
+
+# 生产由 Cloudflare Access 注入;本地预览没有 Access,
+# 管理路径按设计失败关闭(503)——本地无法用这些变量绕过鉴权。
+ACCESS_TEAM_DOMAIN=
+ACCESS_AUD=
+ADMIN_ALLOWED_HOSTS=localhost
+ADMIN_EMAILS=
+CSRF_SECRET=

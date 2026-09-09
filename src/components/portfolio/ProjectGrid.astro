@@ -1,0 +1,31 @@
+---
+/**
+ * 作品卡片栅格:发丝线分割网格(墨白设计语言)。
+ * 空列表时不渲染任何框架,由调用方决定空状态文案(计划 §11.1)。
+ */
+import type { PublicProject } from "@/lib/portfolio/types";
+import ProjectCard from "./ProjectCard.astro";
+
+interface Props {
+  projects: PublicProject[];
+  heading?: "h2" | "h3";
+  class?: string;
+}
+
+const { projects, heading, class: className } = Astro.props;
+---
+
+{
+  projects.length > 0 && (
+    <div
+      class:list={[
+        "grid grid-cols-1 gap-px border border-border bg-border sm:grid-cols-2 lg:grid-cols-3",
+        className,
+      ]}
+    >
+      {projects.map(project => (
+        <ProjectCard project={project} heading={heading} />
+      ))}
+    </div>
+  )
+}

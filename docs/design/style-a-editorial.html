@@ -1,0 +1,630 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>风格 A · 墨白 Editorial — 作品界面模板</title>
+<style>
+/* ═══════════════════════════════════════════
+   风格 A 「墨白」— 编辑部 / 杂志风
+   设计语言:衬线标题 · 细线分割 · 大留白 · 单一朱砂强调色
+   ═══════════════════════════════════════════ */
+:root {
+  --serif: Georgia, "Times New Roman", "Songti SC", "STSong", SimSun, "Noto Serif CJK SC", serif;
+  --sans: -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif;
+  --mono: ui-monospace, Consolas, "Cascadia Code", "Courier New", monospace;
+}
+:root, html[data-theme="light"] {
+  --bg: #faf8f3;        /* 暖纸白 */
+  --fg: #1c1b17;        /* 墨色 */
+  --muted: #7d7768;     /* 灰褐 */
+  --line: #e4dfd2;      /* 发丝线 */
+  --card: #f1ecdf;      /* 封面色块 */
+  --code-bg: #efeadd;
+  --accent: #b23a25;    /* 朱砂 */
+}
+html[data-theme="dark"] {
+  --bg: #191713;
+  --fg: #eae5d8;
+  --muted: #99927e;
+  --line: #37332a;
+  --card: #22201a;
+  --code-bg: #232019;
+  --accent: #e0704f;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: var(--sans);
+  background: var(--bg);
+  color: var(--fg);
+  line-height: 1.75;
+  font-size: 15.5px;
+  -webkit-font-smoothing: antialiased;
+}
+a { color: inherit; text-decoration: none; }
+:focus-visible { outline: 2px dashed var(--accent); outline-offset: 3px; }
+::selection { background: var(--accent); color: var(--bg); }
+
+/* ── 预览控制台(非设计一部分) ── */
+.mockbar {
+  position: sticky; top: 0; z-index: 99;
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  background: #211f1c; color: #e8e4da; padding: 10px 20px;
+  font-size: 13px; border-bottom: 1px solid #000;
+}
+.mockbar .tag {
+  font-size: 10px; letter-spacing: .25em; padding: 3px 8px;
+  border: 1px solid #6b6558; color: #b5ad9b;
+}
+.mockbar strong { font-weight: 600; }
+.mock-tabs { display: flex; gap: 4px; margin-left: auto; }
+.mock-tabs button, .mock-theme {
+  background: none; border: 1px solid transparent; color: #b5ad9b;
+  font: inherit; padding: 4px 12px; cursor: pointer; border-radius: 2px;
+}
+.mock-tabs button:hover { color: #fff; }
+.mock-tabs button.is-active { border-color: #6b6558; color: #fff; }
+.mock-theme { border-color: #6b6558; }
+
+/* ── 视图切换 ── */
+.view { display: none; }
+.view.is-active { display: block; }
+
+.wrap { max-width: 1040px; margin: 0 auto; padding: 0 24px; }
+.wrap-narrow { max-width: 780px; margin: 0 auto; padding: 0 24px; }
+
+/* ── 站点头部 ── */
+.site-head { border-bottom: 1px solid var(--line); }
+.site-head .bar {
+  display: flex; align-items: baseline; justify-content: space-between;
+  padding: 26px 0 20px;
+}
+.logo { font-family: var(--serif); font-size: 22px; font-weight: 700; letter-spacing: .08em; }
+.logo small { font-family: var(--sans); font-size: 10px; letter-spacing: .3em; color: var(--muted); margin-left: 12px; font-weight: 400; }
+.nav { display: flex; gap: 26px; font-size: 13.5px; letter-spacing: .12em; }
+.nav a { color: var(--muted); padding-bottom: 4px; }
+.nav a:hover { color: var(--fg); }
+.nav a.on { color: var(--accent); border-bottom: 1px solid var(--accent); }
+
+/* ── 区块标题:编号 + 衬线 + 英文字距 ── */
+.sec { padding: 64px 0 12px; }
+.sec-head {
+  display: flex; align-items: baseline; gap: 16px;
+  border-bottom: 1px solid var(--line); padding-bottom: 14px; margin-bottom: 34px;
+}
+.sec-num { font-family: var(--serif); font-style: italic; color: var(--accent); font-size: 15px; }
+.sec-title { font-family: var(--serif); font-size: 26px; font-weight: 600; letter-spacing: .06em; }
+.sec-en { margin-left: auto; font-size: 10px; letter-spacing: .4em; color: var(--muted); }
+
+/* ── 首页 Hero ── */
+.hero { padding: 88px 0 72px; border-bottom: 1px solid var(--line); }
+.kicker {
+  font-size: 11px; letter-spacing: .45em; color: var(--accent);
+  display: flex; align-items: center; gap: 14px; margin-bottom: 22px;
+}
+.kicker::before { content: ""; width: 42px; height: 1px; background: var(--accent); }
+.hero h1 { font-family: var(--serif); font-size: clamp(44px, 7vw, 68px); font-weight: 700; letter-spacing: .04em; line-height: 1.15; }
+.hero .verse { margin-top: 18px; color: var(--muted); font-size: 16px; letter-spacing: .1em; }
+.hero .socials { margin-top: 30px; display: flex; gap: 22px; font-size: 13px; letter-spacing: .1em; }
+.hero .socials a { color: var(--muted); border-bottom: 1px solid var(--line); padding-bottom: 3px; }
+.hero .socials a:hover { color: var(--accent); border-color: var(--accent); }
+
+/* ── 作品卡片(分割线网格) ── */
+.grid-cards {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1px; background: var(--line); border: 1px solid var(--line);
+}
+.p-card { background: var(--bg); padding: 26px; display: flex; flex-direction: column; gap: 14px; transition: background .2s; }
+.p-card:hover { background: color-mix(in srgb, var(--card) 36%, var(--bg)); }
+.p-cover {
+  aspect-ratio: 16 / 10; background: var(--card); border: 1px solid var(--line);
+  display: grid; place-items: center; position: relative;
+}
+.p-cover b { font-family: var(--serif); font-size: 56px; font-weight: 400; color: var(--muted); }
+.p-cover i { position: absolute; right: 10px; bottom: 8px; font-style: normal; font-size: 10px; letter-spacing: .25em; color: var(--muted); opacity: .7; }
+.p-title { font-family: var(--serif); font-size: 21px; font-weight: 600; letter-spacing: .03em; }
+.p-card:hover .p-title { color: var(--accent); }
+.p-summary { color: var(--muted); font-size: 13.5px; line-height: 1.8; flex: 1; }
+.p-tags { font-size: 12px; color: var(--muted); letter-spacing: .06em; }
+.p-tags em { font-style: normal; color: var(--accent); margin: 0 2px; }
+.p-facts {
+  display: flex; gap: 16px; border-top: 1px solid var(--line); padding-top: 12px;
+  font-family: var(--mono); font-size: 11.5px; color: var(--muted);
+}
+.p-facts .ver { color: var(--accent); border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent); padding: 0 6px; }
+
+/* ── 文字按钮 ── */
+.btn {
+  display: inline-flex; align-items: center; gap: 10px;
+  border: 1px solid var(--fg); padding: 11px 26px;
+  font-size: 12.5px; letter-spacing: .25em; transition: all .2s;
+}
+.btn:hover { background: var(--fg); color: var(--bg); }
+.btn-accent { border-color: var(--accent); color: var(--accent); }
+.btn-accent:hover { background: var(--accent); color: var(--bg); }
+.more-row { display: flex; justify-content: center; padding: 42px 0 64px; }
+
+/* ── 文章列表行 ── */
+.post-row {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 20px;
+  padding: 20px 2px; border-bottom: 1px solid var(--line);
+}
+.post-row h3 { font-family: var(--serif); font-size: 17.5px; font-weight: 600; letter-spacing: .02em; }
+.post-row:hover h3 { color: var(--accent); }
+.post-row time { font-family: var(--mono); font-size: 12px; color: var(--muted); white-space: nowrap; }
+
+/* ── 列表页:页头 + 筛选 ── */
+.page-head { padding: 72px 0 0; }
+.page-head h1 { font-family: var(--serif); font-size: clamp(36px, 5vw, 52px); font-weight: 700; letter-spacing: .04em; margin-top: 20px; }
+.page-head .count { color: var(--muted); font-size: 13.5px; margin-top: 10px; letter-spacing: .05em; }
+.filter {
+  display: flex; flex-wrap: wrap; gap: 10px; align-items: center;
+  border: 1px solid var(--line); padding: 14px; margin: 30px 0 34px;
+}
+.filter input[type="text"] {
+  flex: 1; min-width: 180px; background: none; border: none; border-bottom: 1px solid var(--line);
+  color: var(--fg); font: inherit; font-size: 14px; padding: 6px 2px;
+}
+.filter input[type="text"]::placeholder { color: var(--muted); }
+.filter select {
+  background: var(--bg); color: var(--muted); border: 1px solid var(--line);
+  font: inherit; font-size: 13px; padding: 7px 10px;
+}
+.filter button { font-size: 12px; padding: 8px 22px; }
+.pagination {
+  display: flex; justify-content: center; align-items: center; gap: 8px;
+  padding: 46px 0 70px; font-family: var(--mono); font-size: 13px;
+}
+.pagination a, .pagination span { min-width: 34px; height: 34px; display: grid; place-items: center; border: 1px solid var(--line); color: var(--muted); }
+.pagination .cur { border-color: var(--accent); color: var(--accent); }
+.pagination a:hover { color: var(--fg); border-color: var(--fg); }
+
+/* ── 详情页 ── */
+.back { display: inline-block; margin-top: 36px; font-size: 13px; letter-spacing: .1em; color: var(--muted); }
+.back:hover { color: var(--accent); }
+.d-head { padding-top: 18px; border-bottom: 1px solid var(--line); padding-bottom: 40px; }
+.d-head h1 { font-family: var(--serif); font-size: clamp(32px, 5vw, 48px); font-weight: 700; letter-spacing: .03em; margin: 14px 0 16px; }
+.d-head .slug { font-family: var(--mono); font-size: 12px; color: var(--muted); letter-spacing: .08em; }
+.d-summary { color: var(--muted); font-size: 16px; max-width: 640px; }
+.d-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 28px; }
+.meta-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(128px, 1fr));
+  border: 1px solid var(--line); border-top: none;
+}
+.meta-cell { padding: 18px 22px; border-right: 1px solid var(--line); }
+.meta-cell:last-child { border-right: none; }
+.meta-cell .k { font-size: 10px; letter-spacing: .3em; color: var(--muted); display: block; margin-bottom: 6px; }
+.meta-cell .v { font-family: var(--serif); font-size: 16px; }
+
+.d-sec { padding: 46px 0 6px; }
+.d-sec > h2 {
+  font-family: var(--serif); font-size: 20px; font-weight: 600; letter-spacing: .08em;
+  display: flex; align-items: center; gap: 12px; margin-bottom: 22px;
+}
+.d-sec > h2::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+.feat-list { list-style: none; display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 2px 30px; }
+.feat-list li { padding: 10px 0 10px 26px; position: relative; border-bottom: 1px solid var(--line); font-size: 14.5px; }
+.feat-list li::before { content: "—"; position: absolute; left: 0; color: var(--accent); }
+
+/* 正文排版 */
+.prose { max-width: 720px; }
+.prose h3 { font-family: var(--serif); font-size: 18px; margin: 30px 0 12px; letter-spacing: .04em; }
+.prose p { margin: 14px 0; color: color-mix(in srgb, var(--fg) 88%, var(--muted)); }
+.prose ul { margin: 14px 0 14px 22px; }
+.prose li { margin: 6px 0; }
+.prose pre {
+  background: var(--code-bg); border: 1px solid var(--line); padding: 18px 20px;
+  font-family: var(--mono); font-size: 13px; overflow-x: auto; margin: 20px 0; line-height: 1.7;
+}
+.prose blockquote {
+  border-left: 2px solid var(--accent); padding: 4px 0 4px 20px; margin: 20px 0;
+  color: var(--muted); font-family: var(--serif); font-style: italic;
+}
+.shots { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 22px; }
+.shots figure { border: 1px solid var(--line); }
+.shots .ph { aspect-ratio: 16 / 10; background: var(--card); display: grid; place-items: center; color: var(--muted); font-family: var(--serif); letter-spacing: .3em; font-size: 13px; }
+.shots figcaption { padding: 10px 14px; font-size: 12px; color: var(--muted); border-top: 1px solid var(--line); }
+.chip-row { display: flex; flex-wrap: wrap; gap: 10px; }
+.chip { font-size: 12.5px; border: 1px solid var(--line); color: var(--muted); padding: 5px 14px; letter-spacing: .06em; }
+.chip.hot { border-color: var(--accent); color: var(--accent); }
+
+/* 下载模块 */
+.release-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 16px; margin-bottom: 6px; }
+.release-head .ver { font-family: var(--serif); font-size: 24px; color: var(--accent); }
+.release-head .date { font-family: var(--mono); font-size: 12px; color: var(--muted); }
+.release-head .gh { margin-left: auto; font-size: 12.5px; color: var(--muted); border-bottom: 1px solid var(--line); }
+.release-head .gh:hover { color: var(--accent); border-color: var(--accent); }
+.rel-notes { margin: 10px 0 26px; padding-left: 20px; color: var(--muted); font-size: 13.5px; }
+.dl-group { border-top: 1px solid var(--line); }
+.dl-group summary {
+  list-style: none; cursor: pointer; display: flex; align-items: center; gap: 12px;
+  padding: 14px 4px; font-size: 13px; letter-spacing: .18em;
+}
+.dl-group summary::-webkit-details-marker { display: none; }
+.dl-group summary .mk { color: var(--accent); font-family: var(--mono); transition: transform .2s; }
+.dl-group[open] summary .mk { transform: rotate(90deg); }
+.dl-group summary .cnt { color: var(--muted); font-size: 11.5px; letter-spacing: .05em; }
+.dl-row {
+  display: flex; align-items: baseline; gap: 14px; padding: 11px 4px 11px 26px;
+  border-top: 1px dashed var(--line); font-size: 13.5px;
+}
+.dl-row .name { font-family: var(--mono); font-size: 12.5px; }
+.dl-row .size { font-family: var(--mono); font-size: 11px; color: var(--muted); }
+.dl-row a { margin-left: auto; color: var(--accent); font-size: 12px; letter-spacing: .12em; white-space: nowrap; }
+.dl-row a:hover { text-decoration: underline; text-underline-offset: 4px; }
+.src-row { border-top: 1px solid var(--line); padding: 16px 4px; font-size: 13px; color: var(--muted); display: flex; gap: 18px; flex-wrap: wrap; }
+.src-row a { color: var(--accent); border-bottom: 1px dashed color-mix(in srgb, var(--accent) 50%, transparent); }
+
+/* ── 页脚 ── */
+.site-foot { border-top: 1px solid var(--line); margin-top: 90px; }
+.site-foot .in { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 10px; padding: 30px 0; font-size: 12px; color: var(--muted); letter-spacing: .12em; }
+
+@media (max-width: 720px) {
+  .site-head .bar { flex-direction: column; gap: 14px; align-items: flex-start; }
+  .sec-en { display: none; }
+  .meta-cell { border-bottom: 1px solid var(--line); }
+}
+</style>
+</head>
+<body>
+
+<!-- 预览控制台(仅用于模板浏览,非设计一部分) -->
+<div class="mockbar">
+  <span class="tag">MOCKUP</span>
+  <strong>风格 A · 墨白 Editorial</strong>
+  <nav class="mock-tabs">
+    <button data-view-btn="home" class="is-active">首页</button>
+    <button data-view-btn="list">作品列表</button>
+    <button data-view-btn="detail">作品详情</button>
+  </nav>
+  <button class="mock-theme" data-theme-toggle>深 / 浅</button>
+</div>
+
+<!-- ═══════════════════ 视图:首页 ═══════════════════ -->
+<section class="view is-active" data-view="home">
+
+  <header class="site-head">
+    <div class="wrap bar">
+      <a class="logo" href="#">粥盐籽<small>POSASE.IM</small></a>
+      <nav class="nav">
+        <a class="on" href="#">首页</a>
+        <a href="#">作品</a>
+        <a href="#">文章</a>
+        <a href="#">标签</a>
+        <a href="#">归档</a>
+        <a href="#">搜索</a>
+      </nav>
+    </div>
+  </header>
+
+  <div class="wrap">
+    <section class="hero">
+      <p class="kicker">个人站点 · PORTFOLIO &amp; BLOG</p>
+      <h1>粥盐籽</h1>
+      <p class="verse">夜晚潮湿 地面潮湿 空气寂静 树林沉默</p>
+      <div class="socials">
+        <a href="#">GitHub</a><a href="#">RSS 订阅</a><a href="#">Email</a>
+      </div>
+    </section>
+
+    <!-- 组件:ProjectGrid(精选作品,最多 6) -->
+    <section class="sec">
+      <div class="sec-head">
+        <span class="sec-num">01</span>
+        <h2 class="sec-title">精选作品</h2>
+        <span class="sec-en">FEATURED PROJECTS</span>
+      </div>
+      <div class="grid-cards">
+        <!-- 组件:ProjectCard -->
+        <a class="p-card" href="#">
+          <div class="p-cover"><b>A</b><i>封面色块</i></div>
+          <h3 class="p-title">Aurora 博客主题</h3>
+          <p class="p-summary">为 Astro 打造的双栏博客主题,内置深浅色、阅读进度与全文搜索,一行配置即可接入 Pagefind。</p>
+          <p class="p-tags"><em>#</em>astro <em>#</em>tailwind <em>#</em>blog-theme</p>
+          <p class="p-facts"><span class="ver">v2.4.0</span><span>★ 128</span><span>MIT</span><span>TypeScript</span></p>
+        </a>
+        <a class="p-card" href="#">
+          <div class="p-cover"><b>拾</b><i>封面色块</i></div>
+          <h3 class="p-title">拾光相册</h3>
+          <p class="p-summary">自托管家庭相册服务,支持时间线浏览、人脸聚类与原图直链,单个二进制即可部署。</p>
+          <p class="p-tags"><em>#</em>go <em>#</em>self-hosted <em>#</em>gallery</p>
+          <p class="p-facts"><span class="ver">v1.3.1</span><span>★ 86</span><span>GPL-3.0</span><span>Go</span></p>
+        </a>
+        <a class="p-card" href="#">
+          <div class="p-cover"><b>梗</b><i>封面色块</i></div>
+          <h3 class="p-title">梗图抽屉</h3>
+          <p class="p-summary">一键收藏时间线梗图的浏览器扩展,支持标签整理与本地全文搜索。</p>
+          <p class="p-tags"><em>#</em>chrome-extension <em>#</em>meme</p>
+          <p class="p-facts"><span class="ver">v0.9.0</span><span>★ 42</span><span>MIT</span><span>JavaScript</span></p>
+        </a>
+      </div>
+      <div class="more-row">
+        <a class="btn" href="#">全部作品 →</a>
+      </div>
+    </section>
+
+    <section class="sec" style="padding-bottom:40px">
+      <div class="sec-head">
+        <span class="sec-num">02</span>
+        <h2 class="sec-title">最新文章</h2>
+        <span class="sec-en">RECENT POSTS</span>
+      </div>
+      <a class="post-row" href="#"><h3>Pi Agent 快捷键速查</h3><time>2026-09-05</time></a>
+      <a class="post-row" href="#"><h3>Claude Code Desktop 桌面版快速上手</h3><time>2026-08-28</time></a>
+      <a class="post-row" href="#"><h3>Superpowers 与 GSD 深度总结报告</h3><time>2026-08-20</time></a>
+      <a class="post-row" href="#"><h3>AI 网页端转 API 实践</h3><time>2026-08-14</time></a>
+      <div class="more-row">
+        <a class="btn" href="#">全部文章 →</a>
+      </div>
+    </section>
+  </div>
+
+  <footer class="site-foot">
+    <div class="wrap in">
+      <span>© 2026 粥盐籽</span>
+      <span>由 Astro 驱动 · RSS</span>
+    </div>
+  </footer>
+</section>
+
+<!-- ═══════════════════ 视图:作品列表 ═══════════════════ -->
+<section class="view" data-view="list">
+
+  <header class="site-head">
+    <div class="wrap bar">
+      <a class="logo" href="#">粥盐籽<small>POSASE.IM</small></a>
+      <nav class="nav">
+        <a href="#">首页</a>
+        <a class="on" href="#">作品</a>
+        <a href="#">文章</a>
+        <a href="#">标签</a>
+        <a href="#">归档</a>
+        <a href="#">搜索</a>
+      </nav>
+    </div>
+  </header>
+
+  <div class="wrap">
+    <div class="page-head">
+      <p class="kicker">PROJECTS · 按人工顺序排列</p>
+      <h1>全部作品</h1>
+      <p class="count">共 6 个作品 · 每页 12 项 · 第 1 / 1 页</p>
+    </div>
+
+    <!-- 组件:ProjectFilter(GET 筛选表单示意) -->
+    <form class="filter" method="get" action="/projects/">
+      <input type="text" name="q" placeholder="搜索标题、摘要或标签…">
+      <select name="tag" aria-label="按主题标签筛选">
+        <option>全部主题</option><option>astro</option><option>go</option><option>cli</option><option>chrome-extension</option>
+      </select>
+      <select name="stack" aria-label="按技术栈筛选">
+        <option>全部技术栈</option><option>TypeScript</option><option>Go</option><option>Rust</option><option>JavaScript</option>
+      </select>
+      <button class="btn" type="submit">筛选</button>
+    </form>
+
+    <!-- 组件:ProjectGrid -->
+    <div class="grid-cards">
+      <a class="p-card" href="#">
+        <div class="p-cover"><b>A</b><i>封面色块</i></div>
+        <h3 class="p-title">Aurora 博客主题</h3>
+        <p class="p-summary">为 Astro 打造的双栏博客主题,内置深浅色、阅读进度与全文搜索,一行配置即可接入 Pagefind。</p>
+        <p class="p-tags"><em>#</em>astro <em>#</em>tailwind <em>#</em>blog-theme</p>
+        <p class="p-facts"><span class="ver">v2.4.0</span><span>★ 128</span><span>MIT</span><span>TypeScript</span></p>
+      </a>
+      <a class="p-card" href="#">
+        <div class="p-cover"><b>拾</b><i>封面色块</i></div>
+        <h3 class="p-title">拾光相册</h3>
+        <p class="p-summary">自托管家庭相册服务,支持时间线浏览、人脸聚类与原图直链,单个二进制即可部署。</p>
+        <p class="p-tags"><em>#</em>go <em>#</em>self-hosted <em>#</em>gallery</p>
+        <p class="p-facts"><span class="ver">v1.3.1</span><span>★ 86</span><span>GPL-3.0</span><span>Go</span></p>
+      </a>
+      <a class="p-card" href="#">
+        <div class="p-cover"><b>梗</b><i>封面色块</i></div>
+        <h3 class="p-title">梗图抽屉</h3>
+        <p class="p-summary">一键收藏时间线梗图的浏览器扩展,支持标签整理与本地全文搜索。</p>
+        <p class="p-tags"><em>#</em>chrome-extension <em>#</em>meme</p>
+        <p class="p-facts"><span class="ver">v0.9.0</span><span>★ 42</span><span>MIT</span><span>JavaScript</span></p>
+      </a>
+      <a class="p-card" href="#">
+        <div class="p-cover"><b>M</b><i>封面色块</i></div>
+        <h3 class="p-title">md2pdf</h3>
+        <p class="p-summary">把 Markdown 目录批量排版为 PDF 的小工具,保留标题层级与代码高亮。</p>
+        <p class="p-tags"><em>#</em>cli <em>#</em>pdf</p>
+        <p class="p-facts"><span>★ 56</span><span>Apache-2.0</span><span>Rust</span></p>
+      </a>
+      <a class="p-card" href="#">
+        <div class="p-cover"><b>问</b><i>封面色块</i></div>
+        <h3 class="p-title">问答卡片生成器</h3>
+        <p class="p-summary">输入一段笔记,自动排版成适合分享的问答卡片,可导出 PNG 与 SVG。</p>
+        <p class="p-tags"><em>#</em>canvas <em>#</em>note-card</p>
+        <p class="p-facts"><span>★ 31</span><span>MIT</span><span>TypeScript</span></p>
+      </a>
+      <a class="p-card" href="#">
+        <div class="p-cover"><b>L</b><i>封面色块</i></div>
+        <h3 class="p-title">Loopdo 循环待办</h3>
+        <p class="p-summary">把待办按「今天 / 本周 / 以后」三栏循环安排的极简任务板。</p>
+        <p class="p-tags"><em>#</em>vue <em>#</em>todo</p>
+        <p class="p-facts"><span>★ 18</span><span>MIT</span><span>Vue</span></p>
+      </a>
+    </div>
+
+    <nav class="pagination" aria-label="分页">
+      <span>←</span><span class="cur">1</span><a href="#">2</a><a href="#">→</a>
+    </nav>
+  </div>
+
+  <footer class="site-foot">
+    <div class="wrap in">
+      <span>© 2026 粥盐籽</span>
+      <span>由 Astro 驱动 · RSS</span>
+    </div>
+  </footer>
+</section>
+
+<!-- ═══════════════════ 视图:作品详情 ═══════════════════ -->
+<section class="view" data-view="detail">
+
+  <header class="site-head">
+    <div class="wrap bar">
+      <a class="logo" href="#">粥盐籽<small>POSASE.IM</small></a>
+      <nav class="nav">
+        <a href="#">首页</a>
+        <a class="on" href="#">作品</a>
+        <a href="#">文章</a>
+        <a href="#">标签</a>
+        <a href="#">归档</a>
+        <a href="#">搜索</a>
+      </nav>
+    </div>
+  </header>
+
+  <div class="wrap-narrow">
+    <a class="back" href="#">← 返回作品列表</a>
+
+    <header class="d-head">
+      <p class="slug">/projects/gh-1001/</p>
+      <h1>Aurora 博客主题</h1>
+      <p class="d-summary">为 Astro 打造的双栏博客主题,内置深浅色、阅读进度与全文搜索,一行配置即可接入 Pagefind。</p>
+      <div class="d-actions">
+        <a class="btn btn-accent" href="#">GitHub 仓库</a>
+        <a class="btn" href="#">访问网站</a>
+        <a class="btn" href="#">阅读文档</a>
+      </div>
+    </header>
+
+    <div class="meta-grid">
+      <div class="meta-cell"><span class="k">最新版本</span><span class="v">v2.4.0</span></div>
+      <div class="meta-cell"><span class="k">发布时间</span><span class="v">2026-08-12</span></div>
+      <div class="meta-cell"><span class="k">许可证</span><span class="v">MIT</span></div>
+      <div class="meta-cell"><span class="k">Stars</span><span class="v">128</span></div>
+      <div class="meta-cell"><span class="k">语言</span><span class="v">TypeScript</span></div>
+    </div>
+
+    <section class="d-sec">
+      <h2>主要能力</h2>
+      <ul class="feat-list">
+        <li>深浅色主题一键切换,自动跟随系统</li>
+        <li>内置 Pagefind 中文全文搜索</li>
+        <li>文章阅读进度条与代码一键复制</li>
+        <li>构建时自动生成 OG 分享图片</li>
+        <li>响应式布局,移动端深度优化</li>
+        <li>标签、归档与 RSS 全套支持</li>
+      </ul>
+    </section>
+
+    <section class="d-sec prose">
+      <h2>介绍</h2>
+      <h3>为什么写这个主题</h3>
+      <p>市面上的博客主题大多功能繁杂、依赖沉重。Aurora 只保留写作真正需要的东西:清晰排版、快速检索与体面的分享卡片,其余一切都可以通过配置关闭。</p>
+      <pre><code>// astro.config.ts
+import aurora from "aurora-theme";
+
+export default defineConfig({
+  integrates: [aurora({ search: "pagefind" })],
+});</code></pre>
+      <blockquote>少即是多——每一行默认样式都要为自己的存在辩护。</blockquote>
+      <h3>快速开始</h3>
+      <ul>
+        <li>克隆模板仓库并安装依赖;</li>
+        <li>修改 <code>src/config.ts</code> 中的站点信息;</li>
+        <li>运行 <code>pnpm dev</code> 即可本地预览。</li>
+      </ul>
+    </section>
+
+    <section class="d-sec">
+      <h2>截图</h2>
+      <div class="shots">
+        <figure><div class="ph">首 页 示 意</div><figcaption>首页 · 双栏布局与精选列表</figcaption></figure>
+        <figure><div class="ph">文 章 页 示 意</div><figcaption>文章页 · 阅读进度与代码高亮</figcaption></figure>
+      </div>
+    </section>
+
+    <section class="d-sec">
+      <h2>技术信息</h2>
+      <div class="chip-row">
+        <span class="chip hot">TypeScript</span>
+        <span class="chip hot">Astro</span>
+        <span class="chip hot">Tailwind CSS</span>
+        <span class="chip">astro</span>
+        <span class="chip">tailwind</span>
+        <span class="chip">blog-theme</span>
+      </div>
+    </section>
+
+    <!-- 组件:ProjectDownloads(版本与下载,仅在有正式 Release 时渲染) -->
+    <section class="d-sec">
+      <h2>版本与下载</h2>
+      <div class="release-head">
+        <span class="ver">v2.4.0</span>
+        <span class="date">2026-08-12 发布</span>
+        <a class="gh" href="#">在 GitHub 查看 Release →</a>
+      </div>
+      <ul class="rel-notes">
+        <li>新增:归档页按年份折叠</li>
+        <li>修复:暗色模式下代码块对比度不足</li>
+        <li>升级:适配 Astro 5.16</li>
+      </ul>
+
+      <details class="dl-group" open>
+        <summary><span class="mk">▶</span>Windows<span class="cnt">2 个文件</span></summary>
+        <div class="dl-row"><span class="name">Aurora.Setup.2.4.0.exe</span><span class="size">24.6 MB</span><a href="#">下载 ↓</a></div>
+        <div class="dl-row"><span class="name">Aurora-2.4.0-win-x64.msi</span><span class="size">26.1 MB</span><a href="#">下载 ↓</a></div>
+      </details>
+      <details class="dl-group">
+        <summary><span class="mk">▶</span>macOS<span class="cnt">1 个文件</span></summary>
+        <div class="dl-row"><span class="name">Aurora-2.4.0-macos-universal.dmg</span><span class="size">31.8 MB</span><a href="#">下载 ↓</a></div>
+      </details>
+      <details class="dl-group">
+        <summary><span class="mk">▶</span>Linux<span class="cnt">2 个文件</span></summary>
+        <div class="dl-row"><span class="name">Aurora-2.4.0-linux-x86_64.AppImage</span><span class="size">29.3 MB</span><a href="#">下载 ↓</a></div>
+        <div class="dl-row"><span class="name">aurora_2.4.0_amd64.deb</span><span class="size">27.5 MB</span><a href="#">下载 ↓</a></div>
+      </details>
+      <details class="dl-group">
+        <summary><span class="mk">▶</span>其他附件<span class="cnt">1 个文件</span></summary>
+        <div class="dl-row"><span class="name">theme-gallery-pack.zip</span><span class="size">4.2 MB</span><a href="#">下载 ↓</a></div>
+      </details>
+      <details class="dl-group">
+        <summary><span class="mk">▶</span>校验与其他文件<span class="cnt">2 个文件</span></summary>
+        <div class="dl-row"><span class="name">SHA256SUMS.txt</span><span class="size">1.2 KB</span><a href="#">下载 ↓</a></div>
+        <div class="dl-row"><span class="name">SHA256SUMS.sig</span><span class="size">0.6 KB</span><a href="#">下载 ↓</a></div>
+      </details>
+
+      <div class="src-row">
+        源代码:<a href="#">Source code (zip)</a><a href="#">Source code (tar.gz)</a>
+      </div>
+    </section>
+  </div>
+
+  <footer class="site-foot">
+    <div class="wrap in">
+      <span>© 2026 粥盐籽</span>
+      <span>由 Astro 驱动 · RSS</span>
+    </div>
+  </footer>
+</section>
+
+<script>
+(() => {
+  const views = [...document.querySelectorAll("[data-view]")];
+  const btns = [...document.querySelectorAll("[data-view-btn]")];
+  const show = id => {
+    views.forEach(v => v.classList.toggle("is-active", v.dataset.view === id));
+    btns.forEach(b => b.classList.toggle("is-active", b.dataset.viewBtn === id));
+    window.scrollTo({ top: 0 });
+  };
+  btns.forEach(b => b.addEventListener("click", () => {
+    history.replaceState(null, "", "#" + b.dataset.viewBtn);
+    show(b.dataset.viewBtn);
+  }));
+  const h = location.hash.slice(1);
+  show(["home", "list", "detail"].includes(h) ? h : "home");
+  document.querySelector("[data-theme-toggle]")?.addEventListener("click", () => {
+    const r = document.documentElement;
+    r.setAttribute("data-theme", r.getAttribute("data-theme") === "dark" ? "light" : "dark");
+  });
+})();
+</script>
+</body>
+</html>

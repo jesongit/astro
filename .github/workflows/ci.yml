@@ -13,14 +13,14 @@ on:
   workflow_call:
 
 jobs:
-  build:
-    name: Code standards & build
+  quality:
+    name: Code standards, tests & build
     runs-on: ubuntu-latest
-    timeout-minutes: 3
+    timeout-minutes: 15
 
     strategy:
       matrix:
-        node-version: [20]
+        node-version: [22]
 
     steps:
       - name: "☁️ Checkout repository"
@@ -37,8 +37,8 @@ jobs:
           node-version: ${{ matrix.node-version }}
           cache: "pnpm"
 
-      - name: "📦 Install dependencies"
-        run: pnpm install
+      - name: "📦 Install dependencies (frozen lockfile)"
+        run: pnpm install --frozen-lockfile
 
       - name: "🔎 Lint code"
         run: pnpm run lint
@@ -46,5 +46,14 @@ jobs:
       - name: "📝 Checking code format"
         run: pnpm run format:check
 
-      - name: "🚀 Build the project"
+      - name: "🧪 Protocol & logic tests"
+        run: pnpm run test
+
+      - name: "🧪 Worker integration tests"
+        run: pnpm run test:worker
+
+      - name: "🚀 Build the project (check + build + pagefind + copy)"
         run: pnpm run build
+
+      - name: "🛡️ Artifact checks (routes / drafts / secrets)"
+        run: pnpm run check:artifact && pnpm run check:routes

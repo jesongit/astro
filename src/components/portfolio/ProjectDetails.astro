@@ -1,0 +1,175 @@
+---
+/**
+ * 作品详情(墨白编辑部风格,计划 §11.2):
+ * - 基础模式与增强模式走同一模板,缺失数据的模块整段不渲染;
+ * - 版本只来自 GitHub Releases,无正式 Release 时不输出版本/下载;
+ * - 正文为服务端安全清洗后的 HTML,由 .project-prose 提供排版。
+ */
+import type { PublicProject } from "@/lib/portfolio/types";
+import ProjectDownloads from "./ProjectDownloads.astro";
+
+interface Props {
+  project: PublicProject;
+}
+
+const { project } = Astro.props;
+
+const metaCells = [
+  project.release && { label: "最新版本", value: project.release.tagName },
+  project.release && {
+    label: "发布时间",
+    value: project.release.publishedAt.slice(0, 10),
+  },
+  project.github.license && { label: "许可证", value: project.github.license },
+  { label: "Stars", value: String(project.github.stars) },
+  project.github.language && { label: "语言", value: project.github.language },
+].filter(Boolean) as { label: string; value: string }[];
+
+const externalActions = [
+  project.links.website && { label: "访问网站", href: project.links.website },
+  project.links.docs && { label: "阅读文档", href: project.links.docs },
+  project.links.demo && { label: "在线演示", href: project.links.demo },
+].filter(Boolean) as { label: string; href: string }[];
+---
+
+<article class="mx-auto w-full max-w-app">
+  <a
+    href="/projects/"
+    class="mt-9 inline-block text-[13px] tracking-[0.1em] text-foreground/60 transition-colors hover:text-accent"
+  >
+    ← 返回作品列表
+  </a>
+
+  <header class="border-b border-border pt-5 pb-10">
+    <p class="font-mono text-xs text-foreground/60">
+      /projects/{project.slug}/
+    </p>
+    <h1
+      class="mt-3.5 mb-4 font-serif text-3xl font-bold tracking-wide sm:text-5xl"
+    >
+      {project.title}
+    </h1>
+    <p class="max-w-[640px] text-base text-foreground/70">{project.summary}</p>
+
+    <div class="mt-7 flex flex-wrap gap-3">
+      <a
+        href={project.links.github}
+        target="_blank"
+        rel="noopener noreferrer"
+        class="btn-line btn-line-accent"
+      >
+        GitHub 仓库
+      </a>
+      {
+        externalActions.map(action => (
+          <a
+            href={action.href}
+            target="_blank"
+            rel="noopener noreferrer"
+            class="btn-line"
+          >
+            {action.label}
+          </a>
+        ))
+      }
+    </div>
+  </header>
+
+  {
+    metaCells.length > 0 && (
+      <dl class="mt-8 grid grid-cols-[repeat(auto-fit,minmax(8rem,1fr))] gap-px border border-border bg-border">
+        {metaCells.map(cell => (
+          <div class="bg-background px-5 py-4">
+            <dt class="mb-1.5 text-[10px] tracking-[0.3em] text-foreground/50">
+              {cell.label}
+            </dt>
+            <dd class="font-serif text-base">{cell.value}</dd>
+          </div>
+        ))}
+      </dl>
+    )
+  }
+
+  {
+    project.features.length > 0 && (
+      <section class="pt-11">
+        <h2 class="sec-rule-title">主要能力</h2>
+        <ul class="grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-x-8">
+          {project.features.map(feature => (
+            <li class="relative border-b border-border py-2.5 ps-6 text-sm">
+              <span aria-hidden="true" class="absolute left-0 text-accent">
+                —
+              </span>
+              {feature}
+            </li>
+          ))}
+        </ul>
+      </section>
+    )
+  }
+
+  {
+    project.bodyHtml && (
+      <section class="project-prose pt-11">
+        <h2 class="sec-rule-title">介绍</h2>
+        <div set:html={project.bodyHtml} />
+      </section>
+    )
+  }
+
+  {
+    project.screenshots.length > 0 && (
+      <section class="pt-11">
+        <h2 class="sec-rule-title">截图</h2>
+        <div class="grid gap-6 sm:grid-cols-2">
+          {project.screenshots.map(shot => (
+            <figure class="border border-border">
+              <img
+                src={shot.src}
+                alt={shot.alt}
+                width={shot.width}
+                height={shot.height}
+                loading="lazy"
+                class="aspect-[16/10] w-full object-cover"
+              />
+              {shot.caption && (
+                <figcaption class="border-t border-border px-3.5 py-2.5 text-xs text-foreground/60">
+                  {shot.caption}
+                </figcaption>
+              )}
+            </figure>
+          ))}
+        </div>
+      </section>
+    )
+  }
+
+  {
+    (project.techStack.length > 0 || project.topics.length > 0) && (
+      <section class="pt-11">
+        <h2 class="sec-rule-title">技术信息</h2>
+        <div class="flex flex-wrap gap-2.5">
+          {project.techStack.map(tech => (
+            <span class="border border-accent/50 px-3.5 py-1 text-xs tracking-wide text-accent">
+              {tech}
+            </span>
+          ))}
+          {project.topics.map(topic => (
+            <span class="border border-border px-3.5 py-1 text-xs tracking-wide text-foreground/60">
+              {topic}
+            </span>
+          ))}
+        </div>
+      </section>
+    )
+  }
+
+  {
+    project.release && (
+      <section class="pt-11 pb-4">
+        <h2 class="sec-rule-title">版本与下载</h2>
+        <ProjectDownloads release={project.release} />
+      </section>
+    )
+  }
+</article>

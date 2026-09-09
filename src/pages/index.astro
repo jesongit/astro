@@ -1,4 +1,10 @@
 ---
+/**
+ * 首页(计划 §11.1,按需渲染):
+ * 内容顺序:简短介绍 → 精选作品(≤6,经发布门禁)→ 全部作品入口
+ * → 最新文章(4 篇,复用 Content Layer 构建快照 + postFilter)→ 置顶文章入口。
+ * 精选为空不显示空框;作品服务不可用时保留文章区并给出简短状态。
+ */
 import { getCollection } from "astro:content";
 import Layout from "@/layouts/Layout.astro";
 import Header from "@/components/Header.astro";
@@ -6,30 +12,66 @@ import Footer from "@/components/Footer.astro";
 import Socials from "@/components/Socials.astro";
 import LinkButton from "@/components/LinkButton.astro";
 import Card from "@/components/Card.astro";
+import ProjectGrid from "@/components/portfolio/ProjectGrid.astro";
 import getSortedPosts from "@/utils/getSortedPosts";
+import { listPublicProjects } from "@/lib/portfolio/view";
 import IconRss from "@/assets/icons/IconRss.svg";
 import IconArrowRight from "@/assets/icons/IconArrowRight.svg";
 import { SITE } from "@/config";
 import { SOCIALS } from "@/constants";
 
-const posts = await getCollection("blog");
+export const prerender = false;
 
+const posts = await getCollection("blog");
 const sortedPosts = getSortedPosts(posts);
 const featuredPosts = sortedPosts.filter(({ data }) => data.featured);
 const recentPosts = sortedPosts.filter(({ data }) => !data.featured);
+
+// 经发布门禁的精选与已展示作品(按人工顺序)
+const featuredProjects = await listPublicProjects(Astro.locals, {
+  featuredOnly: true,
+  limit: 6,
+});
+const latestProjects =
+  featuredProjects.length === 0
+    ? await listPublicProjects(Astro.locals, { limit: 6 })
+    : [];
+const portfolioAvailable =
+  featuredProjects.length > 0 || latestProjects.length > 0;
+
+// 结构化数据:WebSite + Person(计划 §12.1)
+const structuredData = [
+  {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    name: SITE.title,
+    description: SITE.desc,
+    url: SITE.website,
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "Person",
+    name: SITE.author,
+    url: SITE.profile,
+  },
+];
 ---
 
-<Layout>
+<Layout structuredData={structuredData}>
   <Header />
   <main id="main-content" data-layout="index" class="app-layout">
-    <section id="hero" class:list={["pt-8 pb-6", "border-b border-border"]}>
-      <h1 class="my-4 inline-block text-4xl font-bold sm:my-8 sm:text-5xl">
-        粥盐籽
+    <section id="hero" class="border-b border-border pt-16 pb-14">
+      <p class="kicker">个人站点 · 作品与文字</p>
+      <h1
+        class="mt-5 mb-3 font-serif text-4xl font-bold tracking-wide sm:text-5xl"
+      >
+        {SITE.title}
       </h1>
+      <p class="text-foreground/70">{SITE.desc}</p>
       <a
         target="_blank"
         href="/rss.xml"
-        class="inline-block"
+        class="mt-2 inline-block align-middle"
         aria-label="RSS 订阅"
         title="RSS 订阅"
       >
@@ -40,12 +82,7 @@ const recentPosts = sortedPosts.filter(({ data }) => !data.featured);
         />
         <span class="sr-only">RSS Feed</span>
       </a>
-
-      <p>
-        夜晚潮湿 地面潮湿 空气寂静 树林沉默
-      </p>
       {
-        // only display if at least one social link is enabled
         SOCIALS.length > 0 && (
           <div class="mt-4 flex max-sm:flex-col sm:items-center">
             <div class="me-2 mb-1 whitespace-nowrap sm:mb-0">社交链接：</div>
@@ -55,34 +92,89 @@ const recentPosts = sortedPosts.filter(({ data }) => !data.featured);
       }
     </section>
 
+    <!-- 01 精选作品(经发布门禁;最多 6) -->
+    <section class="pt-14 pb-2" aria-labelledby="featured-heading">
+      <div class="mb-6 flex items-baseline gap-4">
+        <span class="font-serif text-accent italic">01</span>
+        <h2
+          id="featured-heading"
+          class="font-serif text-2xl font-semibold tracking-wide"
+        >
+          精选作品
+        </h2>
+        <span class="ms-auto text-[10px] tracking-[0.4em] text-foreground/50">
+          FEATURED
+        </span>
+      </div>
+
+      {
+        featuredProjects.length > 0 ? (
+          <ProjectGrid projects={featuredProjects} heading="h3" />
+        ) : (
+          <p class="border-b border-border pb-8 text-sm text-foreground/60">
+            {portfolioAvailable
+              ? "暂无人工精选,以下为已展示作品。"
+              : "作品资料暂时无法展示,稍后再来看看。"}
+          </p>
+        )
+      }
+      {
+        featuredProjects.length === 0 && latestProjects.length > 0 && (
+          <ProjectGrid projects={latestProjects} heading="h3" class="mt-6" />
+        )
+      }
+
+      <div
+        class="flex items-center justify-between border-b border-border py-8"
+      >
+        <LinkButton href="/projects/" class="btn-line">
+          全部作品
+          <IconArrowRight class="inline-block rtl:-rotate-180" />
+        </LinkButton>
+        <span class="font-mono text-[11px] text-foreground/50">
+          {
+            featuredProjects.length > 0
+              ? `精选 ${featuredProjects.length} / 上限 6`
+              : "全部作品入口"
+          }
+        </span>
+      </div>
+    </section>
+
+    <!-- 02 最新文章 -->
+    <section class="pt-12 pb-4" aria-labelledby="posts-heading">
+      <div class="mb-4 flex items-baseline gap-4">
+        <span class="font-serif text-accent italic">02</span>
+        <h2
+          id="posts-heading"
+          class="font-serif text-2xl font-semibold tracking-wide"
+        >
+          最新文章
+        </h2>
+        <span class="ms-auto text-[10px] tracking-[0.4em] text-foreground/50">
+          RECENT POSTS
+        </span>
+      </div>
+      <ul>
+        {
+          recentPosts.map(
+            (data, index) =>
+              index < SITE.postPerIndex && <Card variant="h3" {...data} />
+          )
+        }
+      </ul>
+    </section>
+
     {
       featuredPosts.length > 0 && (
-        <section
-          id="featured"
-          class:list={[
-            "pt-12 pb-6",
-            { "border-b border-border": recentPosts.length > 0 },
-          ]}
-        >
-          <h2 class="text-2xl font-semibold tracking-wide">置顶文章</h2>
+        <section class="pt-8 pb-4" aria-labelledby="pinned-heading">
+          <h2 id="pinned-heading" class="text-xl font-semibold tracking-wide">
+            置顶文章
+          </h2>
           <ul>
             {featuredPosts.map(data => (
               <Card variant="h3" {...data} />
             ))}
-          </ul>
-        </section>
-      )
-    }
-
-    {
-      recentPosts.length > 0 && (
-        <section id="recent-posts" class="pt-12 pb-6">
-          <h2 class="text-2xl font-semibold tracking-wide">最新文章</h2>
-          <ul>
-            {recentPosts.map(
-              (data, index) =>
-                index < SITE.postPerIndex && <Card variant="h3" {...data} />
-            )}
           </ul>
         </section>
       )

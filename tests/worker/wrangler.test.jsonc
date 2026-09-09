@@ -1,0 +1,18 @@
+{
+  // 仅供 vitest-pool-workers 本地测试使用:main 指向 Worker 源码,
+  // KV id 为本地模拟占位(合法 32 hex),与任何真实 namespace 无关。
+  // 兼容日期取本地 workerd 支持的上限;生产配置(2026-09-08)不受影响。
+  // nodejs_compat 与生产一致:CJS 依赖(ajv 等)的正确互操作依赖它。
+  "name": "portfolio-sync-test",
+  "main": "./test-entry.ts",
+  "compatibility_date": "2025-09-06",
+  "compatibility_flags": ["nodejs_compat"],
+  "kv_namespaces": [
+    {
+      "binding": "PORTFOLIO_CONTROL",
+      "id": "00000000000000000000000000000001",
+    },
+    { "binding": "PORTFOLIO_CACHE", "id": "00000000000000000000000000000002" },
+    { "binding": "PORTFOLIO_JOBS", "id": "00000000000000000000000000000003" },
+  ],
+}

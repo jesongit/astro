@@ -1,0 +1,95 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://posase.im/api/portfolio/schema/v1.json",
+  "title": "Portfolio Content v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion"],
+  "properties": {
+    "$schema": {
+      "const": "https://posase.im/api/portfolio/schema/v1.json"
+    },
+    "schemaVersion": { "const": 1 },
+    "title": { "type": "string", "minLength": 1, "maxLength": 80 },
+    "summary": { "type": "string", "minLength": 1, "maxLength": 240 },
+    "bodyFile": { "$ref": "#/$defs/markdownPath" },
+    "features": {
+      "type": "array",
+      "maxItems": 8,
+      "uniqueItems": true,
+      "items": { "type": "string", "minLength": 1, "maxLength": 120 }
+    },
+    "techStack": {
+      "type": "array",
+      "maxItems": 20,
+      "uniqueItems": true,
+      "items": { "type": "string", "minLength": 1, "maxLength": 40 }
+    },
+    "links": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "website": {
+          "anyOf": [{ "$ref": "#/$defs/httpsUrl" }, { "type": "null" }]
+        },
+        "demo": {
+          "anyOf": [{ "$ref": "#/$defs/httpsUrl" }, { "type": "null" }]
+        },
+        "docs": {
+          "anyOf": [{ "$ref": "#/$defs/httpsUrl" }, { "type": "null" }]
+        }
+      }
+    },
+    "cover": { "anyOf": [{ "$ref": "#/$defs/image" }, { "type": "null" }] },
+    "screenshots": {
+      "type": "array",
+      "maxItems": 6,
+      "items": { "$ref": "#/$defs/image" }
+    },
+    "additionalDownloads": {
+      "type": "array",
+      "maxItems": 5,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["label", "url", "kind"],
+        "properties": {
+          "label": { "type": "string", "minLength": 1, "maxLength": 50 },
+          "url": { "$ref": "#/$defs/httpsUrl" },
+          "kind": { "enum": ["store", "package", "external"] },
+          "description": { "type": "string", "maxLength": 160 }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "httpsUrl": {
+      "type": "string",
+      "format": "uri",
+      "maxLength": 2048,
+      "pattern": "^https://"
+    },
+    "markdownPath": {
+      "type": "string",
+      "maxLength": 240,
+      "pattern": "^\\.portfolio/(?:[A-Za-z0-9_-]+/)*[A-Za-z0-9_-]+\\.md$"
+    },
+    "imagePath": {
+      "type": "string",
+      "maxLength": 240,
+      "pattern": "^\\.portfolio/assets/(?:[A-Za-z0-9_-]+/)*[A-Za-z0-9_-]+\\.(?:png|jpg|jpeg|webp)$"
+    },
+    "image": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "alt"],
+      "properties": {
+        "path": { "$ref": "#/$defs/imagePath" },
+        "alt": { "type": "string", "minLength": 1, "maxLength": 160 },
+        "caption": { "type": "string", "maxLength": 200 },
+        "width": { "type": "integer", "minimum": 1, "maximum": 10000 },
+        "height": { "type": "integer", "minimum": 1, "maximum": 10000 }
+      }
+    }
+  }
+}

@@ -81,3 +81,49 @@ CONTROL 与 CACHE/JOBS 写权限隔离由代码保证(同步 Worker 无 CONTROL 
 - 本地 `workerd` 测试池兼容日期上限为 2025-09-06,生产配置为 2026-09-08,
   上线前需在真实环境跑一次 `wrangler pages dev` 与预览 Worker 验证;
 - 首次生产同步前首页作品区为空状态,属预期行为(§11.1)。
+
+## 7. GitHub 作品 workflow
+
+`.github/workflows/portfolio.yml` 是统一入口,只接受每小时 `schedule` 和
+`workflow_dispatch`;没有 `push`/`repository_dispatch` 触发器。这样生成数据或
+构建产生的提交不会再次触发自己,也不会与 Pages 的 Git 集成形成双重生产部署。
+
+### 7.1 与现有 Worker 的边界
+
+- 每小时 GitHub 触发默认为 `build`,因为 `portfolio-sync` 已经拥有每分钟
+  scheduled tick,并在 Worker 内按每小时内容节奏生成数据。GitHub 不再排队第二个
+  full job。
+- 手动 `full`/`repo` 使用当前 JOBS 协议写入 `v1:request:<uuid>`,等待 Worker
+  写入 `v1:result:<uuid>:<runId>` 且状态为 `succeeded` 后,才进入 `pnpm run build`。
+  `partial`、`failed`、`expired`、`interrupted` 都会阻止构建发布。
+- 该入口只写 JOBS,不调用受保护管理 API,不写 CONTROL,不新增 Worker HTTP
+  同步端点;GitHub PAT 仍只保留在 Sync Worker secret 中。
+
+运行所需的 Actions 配置如下(只记录名称,不把值写入仓库):
+
+| 名称 | 类型 | 用途 |
+| --- | --- | --- |
+| `CLOUDFLARE_ACCOUNT_ID` | Repository variable | Wrangler 目标账号 |
+| `CLOUDFLARE_KV_API_TOKEN` | Repository secret | 仅 JOBS KV 读写 |
+| `CLOUDFLARE_PAGES_API_TOKEN` | Repository secret | 仅在 Actions 成为 Pages 所有者时部署 |
+| `PORTFOLIO_PAGES_PROJECT` | Repository variable | 默认 `astro` |
+| `PORTFOLIO_PAGES_DEPLOY_OWNER` | Repository variable | 默认不部署;切换为 `github-actions` 前必须完成账号侧唯一所有者核对 |
+
+当前仓库的部署记录把 `astro` Pages 项目的生产所有者记为 Git 集成(§1),
+因此 workflow 的 Pages 上传 job 默认跳过。只有确认关闭该 Git 集成的生产部署、
+并将 `PORTFOLIO_PAGES_DEPLOY_OWNER` 明确设为 `github-actions` 后,才配置
+`CLOUDFLARE_PAGES_API_TOKEN`;两条生产通道不得同时启用。
+
+### 7.2 手动 dispatch 的 run ID
+
+GitHub 的 workflow dispatch 接口本身只返回确认状态,不会把 run 对象放在响应体。
+需要 run ID 时使用:
+
+```bash
+GITHUB_TOKEN=*** node scripts/dispatch-portfolio-workflow.mjs --mode full
+GITHUB_TOKEN=*** node scripts/dispatch-portfolio-workflow.mjs --mode repo --repo-id 123
+```
+
+脚本只从环境读取 token,dispatch 后轮询同一 workflow/ref 的新
+`workflow_dispatch` run,输出 `run_id` 和链接;不会输出 token。若多个外部请求在同一
+时间 dispatch,返回值按新建时间关联,应以 Actions 页面最终输入和日志复核。

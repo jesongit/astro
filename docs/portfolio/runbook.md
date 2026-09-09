@@ -15,10 +15,16 @@ pnpm run test:worker        # Worker 集成测试
 pnpm run preview:cloudflare # 本地 Wrangler 预览(本地 KV)
 pnpm run deploy:site:preview    # 部署站点预览环境
 pnpm run deploy:sync:preview    # 部署同步 Worker 预览环境
+pnpm run workflow:dispatch -- --mode build # 手动触发统一作品 workflow
 ```
 
 生产部署使用 Git 集成或 `wrangler pages deploy dist`(操作者确认后固化,
 不同时维护两条生产通道)。
+
+统一 workflow 的手动模式为 `full`、`repo`、`build`。`full`/`repo` 先通过
+JOBS KV 排队并等待 Sync Worker 的 `succeeded` 结果,随后才构建;`build` 直接构建。
+每小时 schedule 只做 `build`,数据生成仍由现有 Worker Cron 负责。workflow 没有
+push 触发器,不会因为生成提交循环运行。
 
 ## 常见操作
 

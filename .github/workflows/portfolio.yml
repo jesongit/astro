@@ -1,0 +1,195 @@
+name: Portfolio
+
+# The Cloudflare Sync Worker owns data generation.  This workflow only queues
+# an explicit manual sync and builds the site after that sync has completed.
+# There is intentionally no push trigger: production Pages is currently owned
+# by its Git integration, and a generated-data commit must never re-enter this
+# workflow.
+
+on:
+  schedule:
+    # UTC: run the hourly build without enqueueing a second Worker sync.
+    - cron: "0 * * * *"
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "作品数据范围，或只构建现有数据"
+        required: true
+        type: choice
+        options:
+          - full
+          - repo
+          - build
+        default: build
+      repo_id:
+        description: "mode=repo 时填写 GitHub 数字仓库 ID"
+        required: false
+        type: string
+      deploy:
+        description: "构建后允许使用 Actions 部署到 Pages（需先切换唯一部署所有者）"
+        required: true
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+# Do not cancel a running sync/build.  A second manual dispatch waits instead
+# of creating concurrent KV writers or a second Pages deployment.
+concurrency:
+  group: portfolio-production
+  cancel-in-progress: false
+
+jobs:
+  resolve:
+    name: Resolve workflow mode
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      mode: ${{ steps.mode.outputs.mode }}
+      repo_id: ${{ steps.mode.outputs.repo_id }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Resolve and validate inputs
+        id: mode
+        env:
+          WORKFLOW_EVENT: ${{ github.event_name }}
+          REQUESTED_MODE: ${{ inputs.mode || '' }}
+          REQUESTED_REPO_ID: ${{ inputs.repo_id || '' }}
+        run: node scripts/portfolio-workflow.mjs resolve
+
+  sync:
+    name: Generate portfolio data
+    needs: resolve
+    if: needs.resolve.outputs.mode == 'full' || needs.resolve.outputs.mode == 'repo'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.11.1
+
+      - name: Use Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies (frozen lockfile)
+        run: pnpm install --frozen-lockfile
+
+      - name: Queue and wait for the existing Sync Worker
+        env:
+          # This token is used only for the JOBS KV namespace.  It is not a
+          # GitHub token and is never passed to the site or the Sync Worker.
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_KV_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+          PORTFOLIO_MODE: ${{ needs.resolve.outputs.mode }}
+          PORTFOLIO_REPO_ID: ${{ needs.resolve.outputs.repo_id }}
+          PORTFOLIO_WRANGLER_ENV: production
+          PORTFOLIO_SYNC_TIMEOUT_SECONDS: 900
+        run: node scripts/portfolio-workflow.mjs sync
+
+  build:
+    name: Build portfolio site
+    needs: [resolve, sync]
+    if: >-
+      always() &&
+      (needs.resolve.outputs.mode == 'build' ||
+      needs.sync.result == 'success')
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.11.1
+
+      - name: Use Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies (frozen lockfile)
+        run: pnpm install --frozen-lockfile
+
+      - name: Build site (after data generation, when requested)
+        run: pnpm run build
+
+      - name: Check generated artifact
+        run: pnpm run check:artifact && pnpm run check:routes
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: portfolio-dist-${{ github.run_id }}
+          path: dist
+          if-no-files-found: error
+          retention-days: 1
+
+      - name: Explain production deployment ownership
+        if: vars.PORTFOLIO_PAGES_DEPLOY_OWNER != 'github-actions'
+        run: >-
+          echo "Pages deploy skipped: PORTFOLIO_PAGES_DEPLOY_OWNER is not
+          github-actions. The configured Pages Git integration remains the
+          production deployment owner."
+
+  deploy:
+    name: Deploy Pages site (Actions owner only)
+    needs: [resolve, build]
+    if: >-
+      needs.build.result == 'success' &&
+      vars.PORTFOLIO_PAGES_DEPLOY_OWNER == 'github-actions' &&
+      (github.event_name == 'schedule' || inputs.deploy == true)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: production
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - name: Checkout repository for the locked Wrangler version
+        uses: actions/checkout@v4
+
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: portfolio-dist-${{ github.run_id }}
+          path: dist
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.11.1
+
+      - name: Use Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies (frozen lockfile)
+        run: pnpm install --frozen-lockfile
+
+      - name: Deploy the one configured Pages production owner
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_PAGES_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_PAGES_PROJECT: ${{ vars.CLOUDFLARE_PAGES_PROJECT || 'astro' }}
+        run: >-
+          pnpm exec wrangler pages deploy dist
+          --project-name "$CLOUDFLARE_PAGES_PROJECT"

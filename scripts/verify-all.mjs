@@ -2,13 +2,15 @@
 import { spawnSync } from "node:child_process";
 
 const steps = [
-  ["astro check", ["exec", "astro", "check"]],
-  ["vitest (logic/worker-logic/auth)", ["exec", "vitest", "run"]],
+  ["lint", ["run", "lint"]],
+  ["typecheck", ["run", "typecheck"]],
   ["format:check", ["run", "format:check"]],
-  ["astro build", ["exec", "astro", "build"]],
-  ["pagefind", ["exec", "pagefind", "--site", "dist"]],
+  ["vitest", ["run", "test"]],
+  ["Worker integration tests", ["run", "test:worker"]],
+  ["build", ["run", "build"]],
   ["check:artifact", ["run", "check:artifact"]],
   ["check:routes", ["run", "check:routes"]],
+  ["e2e", ["run", "test:e2e"]],
 ];
 
 let failed = false;

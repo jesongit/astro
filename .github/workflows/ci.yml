@@ -43,6 +43,9 @@ jobs:
       - name: "🔎 Lint code"
         run: pnpm run lint
 
+      - name: "🧭 Typecheck site and Worker"
+        run: pnpm run typecheck
+
       - name: "📝 Checking code format"
         run: pnpm run format:check
 
@@ -57,3 +60,9 @@ jobs:
 
       - name: "🛡️ Artifact checks (routes / drafts / secrets)"
         run: pnpm run check:artifact && pnpm run check:routes
+
+      - name: "🎭 Install Playwright browser"
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: "🌐 Isolated browser acceptance"
+        run: pnpm run test:e2e

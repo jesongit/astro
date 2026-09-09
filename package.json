@@ -14,6 +14,7 @@
     "test:worker": "vitest run --config vitest.worker.config.ts",
     "test:e2e": "playwright test",
     "portfolio:sync": "node ./scripts/portfolio/sync.mjs",
+    "typecheck": "astro check && tsc --noEmit -p workers/portfolio-sync/tsconfig.json",
     "lint": "eslint .",
     "format:check": "prettier --check .",
     "format": "prettier --write .",
@@ -21,6 +22,7 @@
     "check:routes": "node ./scripts/check-routes.mjs",
     "portfolio:workflow": "node ./scripts/portfolio-workflow.mjs",
     "workflow:dispatch": "node ./scripts/dispatch-portfolio-workflow.mjs",
+    "verify:all": "node ./scripts/verify-all.mjs",
     "deploy:site:preview": "wrangler pages deploy dist --branch preview",
     "deploy:sync:preview": "wrangler deploy --config workers/portfolio-sync/wrangler.jsonc --env preview"
   },

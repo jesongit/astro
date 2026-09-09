@@ -6,8 +6,8 @@
  * - token 可见的私有仓库不入候选(资格检查仍会在仓库转私时触发)。
  */
 import type { Inventory } from "../../../src/lib/portfolio/types";
-import type { GitHubClient, RateLimitedError } from "./github";
-import { CredentialError, UpstreamError } from "./github";
+import type { GitHubClient } from "./github";
+import { CredentialError, RateLimitedError, UpstreamError } from "./github";
 
 export interface InventoryProgress {
   runId: string;
@@ -61,26 +61,28 @@ export async function continueInventory(
       page += 1;
     }
   } catch (e) {
+    const checkpoint = { ...progress, nextPage: page, repos };
     if (e instanceof CredentialError) {
-      return { inventory: null, progress, error: { kind: "credential" } };
+      return {
+        inventory: null,
+        progress: checkpoint,
+        error: { kind: "credential" },
+      };
     }
     if (e instanceof RateLimitedError) {
       return {
         inventory: null,
-        progress,
+        progress: checkpoint,
         error: { kind: "rate_limited", retryAt: e.retryAt },
       };
     }
     if (e instanceof UpstreamError) {
       return {
         inventory: null,
-        progress,
+        progress: checkpoint,
         error: { kind: "upstream", status: e.status },
       };
     }
-    return {
-      inventory: null,
-      progress: { ...progress, nextPage: page }, // 保存游标,下一 tick 继续(§8.2.4)
-    };
+    return { inventory: null, progress: checkpoint };
   }
 }

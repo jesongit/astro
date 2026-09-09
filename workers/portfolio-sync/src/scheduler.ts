@@ -11,7 +11,11 @@ import {
   PublicCacheStore,
   SyncWriteStore,
 } from "../../../src/lib/portfolio/store";
-import type { SyncJob, SyncJobResult } from "../../../src/lib/portfolio/types";
+import type {
+  SourceObservation,
+  SyncJob,
+  SyncJobResult,
+} from "../../../src/lib/portfolio/types";
 import { GitHubClient, CredentialError, RateLimitedError } from "./github";
 import { continueInventory, type InventoryProgress } from "./inventory";
 import { syncRepoById } from "./sync-repo";

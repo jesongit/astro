@@ -1,10 +1,11 @@
-# 作品系统部署配置与上线顺序
+# 作品系统部署与上线顺序
 
-> 代码侧实现已完成(阶段 1–6 + 本地可运行的阶段 7 测试)。
+> 代码侧验收入口和未完成项见 [验收矩阵](./acceptance-matrix.md)。
 > 本文档列出的账号侧步骤必须由拥有 Cloudflare 权限的操作者执行;
-> 任何 ID/audience/邮箱都以控制台实际值为准,禁止凭猜测填写。
+> 任何 ID、audience、邮箱或部署 ID 都以目标环境实际值为准,禁止凭猜测填写。
+> 本次代码交付不执行 Cloudflare 资源创建、修改、停用或删除。
 
-## 1. 部署核验(阶段 1,已完成 2026-09-09)
+## 1. 已知部署形态(只读记录)
 
 现有站点为 **Cloudflare Pages**(Git 集成,推 main 自动构建):
 
@@ -63,7 +64,7 @@ secret(控制台配置,不入库):`CSRF_SECRET`(强随机,`openssl rand -base64 
 生产与预览各一套(共 6 个):`PORTFOLIO_CONTROL` / `PORTFOLIO_CACHE` / `PORTFOLIO_JOBS`。
 CONTROL 与 CACHE/JOBS 写权限隔离由代码保证(同步 Worker 无 CONTROL 写路径)。
 
-## 5. 上线顺序(计划 §14.2)
+## 5. 上线顺序(需单独授权执行)
 
 1. 构建基线归档:记录文章 URL 清单与本次构建 ID;
 2. 建预览 KV + Access 预览应用 + 只读 GitHub token,部署 `SYNC_ENABLED=false` 的 Worker;
@@ -72,7 +73,8 @@ CONTROL 与 CACHE/JOBS 写权限隔离由代码保证(同步 Worker 无 CONTROL 
 4. 生产配置 KV/Access/secrets → 部署受保护站点 → 验证 `/admin`、`/api/admin`
    未鉴权均被拒(401/403)→ 再开 Cron;
 5. 管理页按确定清单显式展示/精选,确认两个地区可见后完成验收;
-6. 保留最近可用部署 ID 与 CONTROL 加密导出(§14.3 回滚依据)。
+6. 保留最近可用部署 ID 与 CONTROL 加密导出(§14.3 回滚依据),凭据只保存在受控
+   密钥系统中,不得写入仓库、日志、验收输出或截图。
 
 ## 6. 已知边界(如实告知)
 

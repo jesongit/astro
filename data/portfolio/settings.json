@@ -1,5 +1,13 @@
 {
   "$schema": "../../src/lib/portfolio/schema/data-v1.json",
   "schemaVersion": 1,
-  "settings": []
+  "settings": [
+    {
+      "repoId": "1316796247",
+      "visible": true,
+      "featured": true,
+      "order": 1,
+      "acknowledgedIncidentId": null
+    }
+  ]
 }

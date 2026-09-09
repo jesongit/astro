@@ -10,6 +10,27 @@
       "acknowledgedIncidentId": null
     },
     {
+      "repoId": "1333737554",
+      "visible": true,
+      "featured": false,
+      "order": 1000,
+      "acknowledgedIncidentId": null
+    },
+    {
+      "repoId": "1333974947",
+      "visible": true,
+      "featured": false,
+      "order": 1000,
+      "acknowledgedIncidentId": null
+    },
+    {
+      "repoId": "1337002792",
+      "visible": true,
+      "featured": false,
+      "order": 1000,
+      "acknowledgedIncidentId": null
+    },
+    {
       "repoId": "1349208725",
       "visible": true,
       "featured": true,

@@ -1,4 +1,6 @@
 import type { APIRoute } from "astro";
+import { encodeActionHandle } from "@/lib/admin/github";
+import { selectPublishPlan } from "@/lib/admin/publishing";
 import {
   adminIntegrationError,
   adminRuntime,
@@ -156,13 +158,18 @@ export const PATCH: APIRoute = async context => {
     );
     let publishState = "not_dispatched";
     let publishJobId: string | null = null;
+    let publishMode: "build" | "repo" | "all" | null = null;
     if (saved.committed && runtime.github) {
       try {
-        const dispatched = await runtime.github.dispatchWorkflow({
-          kind: "build",
-        });
+        const plan = selectPublishPlan(saved.settings);
+        const dispatched = await runtime.github.dispatchWorkflow(plan.scope);
         publishState = "dispatched";
-        publishJobId = dispatched.dispatchId;
+        publishMode = plan.mode;
+        publishJobId = encodeActionHandle({
+          dispatchId: dispatched.dispatchId,
+          scope: plan.scope,
+          createdAt: dispatched.createdAt,
+        });
       } catch {
         publishState = "dispatch_failed";
       }
@@ -178,6 +185,7 @@ export const PATCH: APIRoute = async context => {
       committed: saved.committed,
       saveState: saved.committed ? "saved" : "unchanged",
       publishState,
+      publishMode,
       publishJobId,
       changedRepoIds: saved.changedRepoIds,
       settings: {

@@ -1,5 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
+  decodeActionHandle,
+  encodeActionHandle,
   GitHubAdminClient,
   SettingsConflictError,
   getGitHubAdminConfig,
@@ -246,6 +248,21 @@ describe("GitHub admin settings integration", () => {
       status: 403,
       rateLimited: true,
       message: "GitHub 请求受限,请稍后重试。",
+    });
+  });
+});
+
+describe("Actions handles", () => {
+  it("round-trips a build publish scope", () => {
+    const encoded = encodeActionHandle({
+      dispatchId: "00000000-0000-4000-8000-000000000001",
+      scope: { kind: "build" },
+      createdAt: "2026-09-09T10:00:00.000Z",
+    });
+
+    expect(decodeActionHandle(encoded)).toMatchObject({
+      scope: { kind: "build" },
+      createdAt: "2026-09-09T10:00:00.000Z",
     });
   });
 });

@@ -14,6 +14,9 @@ export const prerender = false;
 export const GET: APIRoute = async context => {
   const runtime = adminRuntime(context.locals);
   if (!runtime) return notConfigured();
+  if (!context.locals.adminIdentity) {
+    return jsonError(401, "unauthenticated", "未通过管理鉴权。");
+  }
 
   const jobId = context.params.jobId ?? "";
   if (!jobId || jobId.length > 512) {

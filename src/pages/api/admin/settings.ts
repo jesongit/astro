@@ -9,7 +9,11 @@ import {
   readJsonBody,
 } from "@/lib/admin/api";
 import { settingsEntry } from "@/lib/admin/settings";
-import type { SettingsPatch } from "@/lib/admin/github";
+import {
+  encodeActionHandle,
+  type SettingsPatch,
+} from "@/lib/admin/github";
+import { selectPublishPlan } from "@/lib/admin/publishing";
 
 export const prerender = false;
 
@@ -126,13 +130,18 @@ export const POST: APIRoute = async context => {
     );
     let publishState = "not_dispatched";
     let publishJobId: string | null = null;
+    let publishMode: "build" | "repo" | "all" | null = null;
     if (saved.committed && runtime.github) {
       try {
-        const dispatched = await runtime.github.dispatchWorkflow({
-          kind: "build",
-        });
+        const plan = selectPublishPlan(saved.settings);
+        const dispatched = await runtime.github.dispatchWorkflow(plan.scope);
         publishState = "dispatched";
-        publishJobId = dispatched.dispatchId;
+        publishMode = plan.mode;
+        publishJobId = encodeActionHandle({
+          dispatchId: dispatched.dispatchId,
+          scope: plan.scope,
+          createdAt: dispatched.createdAt,
+        });
       } catch {
         publishState = "dispatch_failed";
       }
@@ -142,6 +151,7 @@ export const POST: APIRoute = async context => {
       committed: saved.committed,
       saveState: saved.committed ? "saved" : "unchanged",
       publishState,
+      publishMode,
       publishJobId,
       dirty: Object.keys(patch).length > 0,
       changedRepoIds: saved.changedRepoIds,

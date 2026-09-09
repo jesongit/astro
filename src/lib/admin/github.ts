@@ -412,7 +412,12 @@ export function decodeActionHandle(value: string): ActionHandle | null {
     )
       return null;
     const scopeRecord = scope as Record<string, unknown>;
-    if (scopeRecord.kind !== "all" && scopeRecord.kind !== "repo") return null;
+    if (
+      scopeRecord.kind !== "all" &&
+      scopeRecord.kind !== "repo" &&
+      scopeRecord.kind !== "build"
+    )
+      return null;
     if (
       scopeRecord.kind === "repo" &&
       (typeof scopeRecord.repoId !== "string" ||
@@ -425,7 +430,9 @@ export function decodeActionHandle(value: string): ActionHandle | null {
       scope:
         scopeRecord.kind === "repo"
           ? { kind: "repo", repoId: scopeRecord.repoId as string }
-          : { kind: "all" },
+          : scopeRecord.kind === "build"
+            ? { kind: "build" }
+            : { kind: "all" },
     };
   } catch {
     return null;

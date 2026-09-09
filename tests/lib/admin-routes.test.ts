@@ -96,13 +96,20 @@ describe("batch admin settings route", () => {
       "101": { visible: true, order: 2 },
       "202": { featured: true },
     });
+    expect(body.publishState).toBe("dispatched");
+    expect(body.publishMode).toBe("repo");
+    expect(typeof body.publishJobId).toBe("string");
     expect(fetchImpl).toHaveBeenCalledTimes(4);
     expect(
       fetchImpl.mock.calls.filter(([, init]) => init?.method === "PUT")
     ).toHaveLength(1);
-    expect(
-      fetchImpl.mock.calls.filter(([, init]) => init?.method === "POST")
-    ).toHaveLength(1);
+    const dispatch = fetchImpl.mock.calls.find(
+      ([, init]) => init?.method === "POST"
+    );
+    expect(JSON.parse(String(dispatch?.[1]?.body))).toMatchObject({
+      ref: "main",
+      inputs: { mode: "repo", repo_id: "101" },
+    });
   });
 
   it("returns 409 for a stale SHA and never submits a write", async () => {

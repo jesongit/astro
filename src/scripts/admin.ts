@@ -48,6 +48,13 @@ interface SavedSettings {
   acknowledgedIncidentId: string | null;
 }
 
+interface SavedSettingsResponse {
+  settings: SavedSettings;
+  publishState: string;
+  publishMode: "build" | "repo" | "all" | null;
+  publishJobId: string | null;
+}
+
 interface BatchSavedSettings {
   settings: Record<
     string,
@@ -57,6 +64,8 @@ interface BatchSavedSettings {
   sha: string | null;
   committed: boolean;
   publishState: string;
+  publishMode: "build" | "repo" | "all" | null;
+  publishJobId: string | null;
 }
 
 interface SyncJobResponse {
@@ -290,6 +299,41 @@ function setCardStatus(card: HTMLElement | null, message: string): void {
 function setSyncStatus(card: HTMLElement | null, message: string): void {
   const status = card?.querySelector('[data-role="sync-status"]');
   if (status) status.textContent = message;
+}
+
+function publishStartMessage(
+  mode: "build" | "repo" | "all" | null,
+  stateValue: string
+): string {
+  if (stateValue !== "dispatched") return "已保存,发布触发失败";
+  if (mode === "repo") return "已保存,正在同步并发布";
+  if (mode === "all") return "已保存,正在全量同步并发布";
+  return "已保存,正在构建发布";
+}
+
+function publishStatusMessage(job: SyncJobResponse): string {
+  const label = JOB_STATE_LABELS[job.state] ?? job.state;
+  const errors =
+    job.errorCodes && job.errorCodes.length > 0
+      ? ` 错误:${job.errorCodes.join(",")}`
+      : "";
+  return `发布任务:${label}(${job.state})${errors}`;
+}
+
+async function pollPublish(
+  jobId: string,
+  show: (message: string) => void
+): Promise<void> {
+  try {
+    for (;;) {
+      const job = await api<SyncJobResponse>(`/api/admin/sync/${jobId}`);
+      show(publishStatusMessage(job));
+      if (TERMINAL_JOB_STATES.has(job.state)) return;
+      await new Promise(resolve => setTimeout(resolve, 5000));
+    }
+  } catch (error) {
+    show(`发布状态查询失败:${formatApiError(error)}`);
+  }
 }
 
 function formatApiError(error: unknown): string {
@@ -588,13 +632,13 @@ async function saveSettings(
     revision: string;
     acknowledgedIncidentId?: string;
   }
-): Promise<SavedSettings> {
-  const result = await api<{ settings: SavedSettings }>(
+): Promise<SavedSettingsResponse> {
+  const result = await api<SavedSettingsResponse>(
     `/api/admin/repos/${repoId}/settings`,
     { method: "PATCH", json: body }
   );
   state.revisions.set(repoId, result.settings.revision);
-  return result.settings;
+  return result;
 }
 
 function applySavedSettings(settings: SavedSettings): void {
@@ -645,15 +689,23 @@ async function saveRepo(repoId: string): Promise<boolean> {
     }
 
     const acknowledgedIncidentId = draft.acknowledgedIncidentId;
-    const saved = await saveSettings(repoId, {
+    const result = await saveSettings(repoId, {
       visible: draft.visible,
       featured: draft.featured,
       order: Number(draft.order),
       revision: state.revisions.get(repoId) ?? "",
       ...(acknowledgedIncidentId ? { acknowledgedIncidentId } : {}),
     });
-    applySavedSettings(saved);
-    setCardStatus(card, "已保存(服务端已确认,正在传播)");
+    applySavedSettings(result.settings);
+    setCardStatus(
+      card,
+      publishStartMessage(result.publishMode, result.publishState)
+    );
+    if (result.publishJobId && result.publishState === "dispatched") {
+      void pollPublish(result.publishJobId, message =>
+        setCardStatus(cardFor(repoId), message)
+      );
+    }
     return true;
   } catch (error) {
     setCardStatus(card, `保存失败:${formatApiError(error)}`);
@@ -744,14 +796,19 @@ async function saveAll(): Promise<void> {
         });
         setCardStatus(
           cardFor(repoId),
-          `已保存(服务端已确认,${result.publishState === "dispatched" ? "正在传播" : "等待传播"})`
+          publishStartMessage(result.publishMode, result.publishState)
         );
+      }
+      if (result.publishJobId && result.publishState === "dispatched") {
+        void pollPublish(result.publishJobId, message => {
+          for (const repoId of repoIds) setCardStatus(cardFor(repoId), message);
+        });
       }
     }
     stateEl.textContent =
       failed > 0
         ? `${failed} 项保存失败,未保存修改仍保留`
-        : `已保存 ${repoIds.length} 项(正在传播)`;
+        : `已保存 ${repoIds.length} 项(发布任务已提交)`;
   } catch (error) {
     const message = `保存失败:${formatApiError(error)}`;
     for (const repoId of repoIds) setCardStatus(cardFor(repoId), message);

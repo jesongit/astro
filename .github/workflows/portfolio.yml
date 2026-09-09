@@ -5,8 +5,8 @@ name: Portfolio
 
 on:
   schedule:
-    # UTC: synchronize public repositories once per hour.
-    - cron: "0 * * * *"
+    # UTC 16:00 = Asia/Shanghai 00:00: synchronize public repositories daily.
+    - cron: "0 16 * * *"
   workflow_dispatch:
     inputs:
       mode:

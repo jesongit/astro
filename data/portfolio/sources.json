@@ -841,14 +841,20 @@
       "schemaVersion": 1,
       "warnings": []
     },
-    {
-      "attemptState": "error",
-      "eligibility": "unknown",
-      "fullName": "jesongit/unlock-music",
-      "lastPublicVerifiedAt": null,
-      "observedAt": "2026-09-09T08:42:21.839Z",
-      "repoId": "323821207",
-      "schemaVersion": 1,
+  {
+    "attemptState": "error",
+    "configState": "absent",
+    "eligibility": "unknown",
+    "fullName": "jesongit/unlock-music",
+    "lastContentSuccessAt": null,
+    "lastPublicVerifiedAt": null,
+    "mode": "basic",
+    "nodeId": "MDEwOlJlcG9zaXRvcnkzMjM4MjEyMDc=",
+    "observedAt": "2026-09-09T08:42:21.839Z",
+    "payloadHash": null,
+    "repoId": "323821207",
+    "releaseState": "none",
+    "schemaVersion": 1,
       "warnings": [
         "identity_unresolved"
       ]

@@ -416,14 +416,32 @@ async function syncRepository({ client, state, target, knownEntry, now }) {
   const observedAt = iso(now);
   const warnings = [];
   if (!resolved.repository) {
+    const nodeId = knownEntry?.nodeId || previous?.nodeId || null;
+    if (!nodeId) {
+      // A direct repo sync may not have an inventory node ID when GitHub
+      // refuses the repository lookup. Do not emit an invalid source record.
+      if (previous) delete state.records[repoId];
+      return {
+        repoId,
+        state: "partial",
+        changed: Boolean(previous),
+        warnings: ["identity_unresolved"],
+      };
+    }
     const next = {
       ...(previous ?? {}),
       repoId,
+      nodeId,
       fullName: previous?.fullName ?? resolved.fullName,
       observedAt,
       attemptState: "error",
       eligibility: previous?.eligibility ?? "unknown",
       lastPublicVerifiedAt: previous?.lastPublicVerifiedAt ?? null,
+      payloadHash: previous?.payloadHash ?? null,
+      configState: previous?.configState ?? "absent",
+      mode: previous?.mode ?? "basic",
+      releaseState: previous?.releaseState ?? "none",
+      lastContentSuccessAt: previous?.lastContentSuccessAt ?? null,
       warnings: ["identity_unresolved"],
     };
     state.records[repoId] = recordChanged(previous, next) ? next : previous;

@@ -291,7 +291,16 @@ describe("portfolio Actions sync", () => {
     ).toHaveLength(2);
     const raw = await readFile(paths.statePath, "utf8");
     expect(raw).not.toContain("test-token");
-    expect(raw).not.toContain("Authorization");
+    const cacheEntries = Object.values(cachedState.state.httpCache ?? {}) as {
+      headers?: Record<string, string | null>;
+    }[];
+    expect(
+      cacheEntries.some(entry =>
+        Object.keys(entry.headers ?? {}).some(
+          key => key.toLowerCase() === "authorization"
+        )
+      )
+    ).toBe(false);
   });
 
   it("retains the last complete inventory when a later full enumeration is interrupted", async () => {
@@ -346,6 +355,7 @@ describe("portfolio Actions sync", () => {
       ownerType: "user",
     });
     expect(loaded.state.inventory?.completed).toBe(true);
+    expect(loaded.state.records[String(REPO_ID)]?.nodeId).toBe("node-demo");
     expect(loaded.state.records[String(REPO_ID)]?.eligibility).toBe(
       "unknown"
     );

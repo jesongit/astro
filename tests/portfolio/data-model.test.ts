@@ -12,13 +12,13 @@ import {
 } from "@/lib/portfolio/data-model";
 
 describe("GitHub portfolio data files v1", () => {
-  it("三个初始化文件都是空集合且通过同一 Schema", () => {
+  it("三个数据文件通过同一 Schema 且集合字段有效", () => {
     expect(validatePortfolioDataFile("settings", settingsFile).ok).toBe(true);
     expect(validatePortfolioDataFile("sources", sourcesFile).ok).toBe(true);
     expect(validatePortfolioDataFile("projects", projectsFile).ok).toBe(true);
-    expect(settingsFile.settings).toEqual([]);
-    expect(sourcesFile.sources).toEqual([]);
-    expect(projectsFile.projects).toEqual([]);
+    expect(Array.isArray(settingsFile.settings)).toBe(true);
+    expect(Array.isArray(sourcesFile.sources)).toBe(true);
+    expect(Array.isArray(projectsFile.projects)).toBe(true);
   });
 
   it("来源观察与公开项目遵守 v1 字段边界", () => {

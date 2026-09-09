@@ -48,6 +48,17 @@ interface SavedSettings {
   acknowledgedIncidentId: string | null;
 }
 
+interface BatchSavedSettings {
+  settings: Record<
+    string,
+    Omit<SavedSettings, "repoId" | "revision">
+  >;
+  revisions: Record<string, string>;
+  sha: string | null;
+  committed: boolean;
+  publishState: string;
+}
+
 interface SyncJobResponse {
   jobId: string;
   state: string;
@@ -691,13 +702,60 @@ async function saveAll(): Promise<void> {
 
   let failed = 0;
   try {
+    const patch: Record<string, Record<string, unknown>> = {};
     for (const repoId of repoIds) {
-      if (!(await saveRepo(repoId))) failed += 1;
+      const repo = getRepo(repoId);
+      const card = cardFor(repoId);
+      const draft = repo && getDraft(repo);
+      if (!repo || !draft || !validOrder(draft.order)) {
+        failed += 1;
+        setCardStatus(card, "保存失败:排序必须是 0 到 1000000 的整数");
+        continue;
+      }
+      patch[repoId] = {
+        visible: draft.visible,
+        featured: draft.featured,
+        order: Number(draft.order),
+        ...(draft.acknowledgedIncidentId
+          ? { acknowledgedIncidentId: draft.acknowledgedIncidentId }
+          : {}),
+      };
+    }
+
+    if (failed === 0) {
+      const snapshot = await api<{ sha: string | null }>(
+        "/api/admin/settings"
+      );
+      const result = await api<BatchSavedSettings>("/api/admin/settings", {
+        method: "PATCH",
+        json: { revision: snapshot.sha ?? "", patch },
+      });
+
+      for (const [repoId, revision] of Object.entries(result.revisions)) {
+        state.revisions.set(repoId, revision);
+      }
+      for (const repoId of repoIds) {
+        const saved = result.settings[repoId];
+        if (!saved) continue;
+        applySavedSettings({
+          ...saved,
+          repoId,
+          revision: result.revisions[repoId] ?? result.sha ?? "",
+        });
+        setCardStatus(
+          cardFor(repoId),
+          `已保存(服务端已确认,${result.publishState === "dispatched" ? "正在传播" : "等待传播"})`
+        );
+      }
     }
     stateEl.textContent =
       failed > 0
         ? `${failed} 项保存失败,未保存修改仍保留`
         : `已保存 ${repoIds.length} 项(正在传播)`;
+  } catch (error) {
+    const message = `保存失败:${formatApiError(error)}`;
+    for (const repoId of repoIds) setCardStatus(cardFor(repoId), message);
+    stateEl.textContent = message;
   } finally {
     state.bulkSaving = false;
     updateGlobalUi();

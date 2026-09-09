@@ -87,6 +87,16 @@ export interface PublicProject {
   release: ProjectRelease | null;
 }
 
+/** GitHub Actions build 生成的稳定公开快照;不含设置、观察或原始来源缓存。 */
+export interface PortfolioSnapshot {
+  schemaVersion: 1;
+  generatedAt: string;
+  owner: string;
+  ownerType: string;
+  inventoryRunId: string;
+  projects: PublicProject[];
+}
+
 /* ───────────── 管理与来源状态(计划 §4.1 / §8) ───────────── */
 
 /** 人工展示设置;只接受管理 API 写入,Sync Worker 无写路径 */

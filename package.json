@@ -13,6 +13,7 @@
     "test:watch": "vitest",
     "test:worker": "vitest run --config vitest.worker.config.ts",
     "test:e2e": "playwright test",
+    "portfolio:sync": "node ./scripts/portfolio/sync.mjs",
     "lint": "eslint .",
     "format:check": "prettier --check .",
     "format": "prettier --write .",

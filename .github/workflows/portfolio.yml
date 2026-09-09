@@ -92,7 +92,7 @@ jobs:
           PORTFOLIO_REPO_ID: ${{ needs.resolve.outputs.repo_id }}
           PORTFOLIO_WRITE_DATA: "true"
         run: >-
-          pnpm run portfolio:sync --
+          node ./scripts/portfolio/sync.mjs
           ${{ needs.resolve.outputs.mode }}
           ${{ needs.resolve.outputs.mode == 'repo' && needs.resolve.outputs.repo_id || '' }}
           --state .cache/portfolio-state.json
@@ -147,7 +147,7 @@ jobs:
           GITHUB_OWNER: jesongit
           GITHUB_OWNER_TYPE: user
         run: >-
-          pnpm run portfolio:sync -- build
+          node ./scripts/portfolio/sync.mjs build
           --state .cache/portfolio-state.json
           --output data/portfolio/projects.json
 

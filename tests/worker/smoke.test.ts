@@ -5,6 +5,8 @@
  */
 import { env, fetchMock } from "cloudflare:test";
 import { afterEach, describe, expect, it } from "vitest";
+import type { SyncEnv } from "../../workers/portfolio-sync/src/env.d";
+import worker from "./test-entry";
 
 describe("workerd KV 形状与 Worker 入口", () => {
   afterEach(() => {
@@ -37,8 +39,26 @@ describe("workerd KV 形状与 Worker 入口", () => {
   });
 
   it("SYNC_ENABLED 语义约定为字符串 true/false(计划 §13.3)", async () => {
-    // 生产 Worker 的 scheduled/fetch 行为联调属于阶段 7 真实 Cloudflare 联调;
-    // 此处仅锁定配置约定。
     expect(env.SYNC_ENABLED ?? "false").toBeDefined();
+  });
+
+  it("真实 Worker scheduled 入口写入 disabled run,fetch 仍不可公开调用", async () => {
+    const pending: Promise<unknown>[] = [];
+    await worker.scheduled(
+      { scheduledTime: Date.now(), cron: "* * * * *" },
+      env as unknown as SyncEnv,
+      { waitUntil: promise => pending.push(promise) }
+    );
+    // 测试配置未启用同步,入口直接写停用记录,不投递后台调度任务。
+    expect(pending).toHaveLength(0);
+
+    const runs = await env.PORTFOLIO_CACHE.list({ prefix: "v1:run:" });
+    expect(runs.keys).toHaveLength(1);
+    const response = await worker.fetch(
+      new Request("https://worker.example/"),
+      env as unknown as SyncEnv,
+      { waitUntil() {} }
+    );
+    expect(response.status).toBe(404);
   });
 });

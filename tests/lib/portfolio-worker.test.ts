@@ -22,11 +22,13 @@ import type { SyncJob } from "../../src/lib/portfolio/types";
 /* ── Map 版 PortfolioKV:语义与 Cloudflare KV 对齐,故意小分页强制走 cursor ── */
 class MemoryKV implements PortfolioKV {
   private store = new Map<string, string>();
+  readonly putKeys: string[] = [];
 
   async get(key: string): Promise<string | null> {
     return this.store.get(key) ?? null;
   }
   async put(key: string, value: string): Promise<void> {
+    this.putKeys.push(key);
     this.store.set(key, value);
   }
   async delete(key: string): Promise<void> {
@@ -147,7 +149,9 @@ function repoRoutes(behavior: {
           ? {
               status: behavior.config.status,
               json: {
-                content: btoa(behavior.config.body),
+                content: Buffer.from(behavior.config.body, "utf8").toString(
+                  "base64"
+                ),
                 encoding: "base64",
                 size: behavior.config.body.length,
               },
@@ -205,6 +209,7 @@ describe("handleTick 调度逻辑(计划 §8.2/§8.3/§17)", () => {
     ]);
     const settings = await control.putSettings("1001", settingsInput, "");
     expect(settings).not.toBeNull();
+    const controlWritesBeforeSync = controlKV.putKeys.length;
     await seedInventory(env.PORTFOLIO_CACHE as unknown as MemoryKV);
 
     const result = await handleTick(env, NOW, { fetchImpl });
@@ -229,7 +234,49 @@ describe("handleTick 调度逻辑(计划 §8.2/§8.3/§17)", () => {
 
     // 同步绝不写 CONTROL:设置对象与写入确认逐字段一致(§8.4)
     expect(await control.getSettings("1001")).toEqual(settings);
-    void controlKV;
+    expect(controlKV.putKeys).toHaveLength(controlWritesBeforeSync);
+  });
+
+  it("首次坏配置仍发布基础内容;配置删除后不复活增强字段", async () => {
+    let configBody: string | null = JSON.stringify({
+      schemaVersion: 1,
+      title: "不允许的管理字段",
+      visible: true,
+    });
+    const { env, control, publicCache, fetchImpl } = makeTestEnv([
+      repoRoutes({
+        config: {
+          get status() {
+            return configBody === null ? 404 : 200;
+          },
+          get body() {
+            return configBody ?? "";
+          },
+        },
+      }),
+    ]);
+    await control.putSettings("1001", settingsInput, "");
+    await seedInventory(env.PORTFOLIO_CACHE as unknown as MemoryKV);
+
+    await handleTick(env, NOW, { fetchImpl });
+    const invalid = await publicCache.getLatestObservation("1001");
+    expect(invalid).not.toBeNull();
+    expect(invalid?.configState).toBe("invalid");
+    expect(invalid?.mode).toBe("basic");
+    expect(invalid?.payloadHash).not.toBeNull();
+    expect((await publicCache.getPayload(invalid!.payloadHash!))?.title).toBe(
+      "aurora-theme"
+    );
+
+    configBody = null;
+    await handleTick(env, NOW + 61 * 60_000, { fetchImpl });
+    const deleted = await publicCache.getLatestObservation("1001");
+    expect(deleted?.configState).toBe("absent");
+    expect(deleted?.mode).toBe("basic");
+    expect(deleted?.payloadHash).not.toBeNull();
+    expect((await publicCache.getPayload(deleted!.payloadHash!))?.title).toBe(
+      "aurora-theme"
+    );
   });
 
   it("私有仓库:墓碑 + unavailable;门禁拒绝", async () => {

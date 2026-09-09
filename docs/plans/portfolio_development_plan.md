@@ -1,8 +1,8 @@
 # 作品展示与 GitHub 自动同步分阶段开发计划
 
-> 编写日期：2026-09-08。检查基线：`57078fc159676bb30496e9d49e8c74c81d6efb11`。
-> 适用仓库：`jesongit/astro`；本地：`E:\code\astro`；站点配置域名：`https://www.posase.im/`。
-> 本文件是待执行的开发计划。本次只新增本文档，没有实施以下功能、安装项目依赖、修改部署或执行上线操作。
+> 编写日期：2026-09-08。本文件保留为历史设计与验收依据；代码状态以当前 HEAD、
+> [作品验收矩阵](../portfolio/acceptance-matrix.md)和部署/运行手册为准。
+> 下文“未实施/没有”只描述计划编写时的仓库快照，不得当作当前实现状态或生产上线证明。
 
 ## 1. 已确认的范围与架构结论
 
@@ -27,19 +27,22 @@
 
 ### 2.1 检查依据及边界
 
-已阅读实际页面、内容 Schema、工具函数、布局、样式、依赖和构建配置，而非只读 README。工作区检查时无已有代码改动，`docs/` 存在但未发现已有计划文件。没有找到适用的 `AGENTS.md`；已阅读根目录 `CLAUDE.md`，本次不修改文章、不提交或推送。
+本节记录计划编写时的审阅结果。当前实现、测试命令和部署边界以验收矩阵及
+`docs/portfolio/` 下的文档为准；不要用本节的历史快照判断功能是否已经合并。
 
-仓库中没有 `wrangler.toml`、`wrangler.json(c)`、`functions/`、Worker 入口、Cloudflare adapter、KV binding、`_routes.json`、`_headers` 或 `_redirects`。`.github/workflows/ci.yml` 是 PR/复用式质量检查，不是生产部署流水线。README 提到 Cloudflare Pages，只能作为部署线索；Dockerfile 确实把 `dist` 放入 Nginx，也佐证当前构建是静态产物。
+计划编写时尚未存在的 Pages 配置、Cloudflare adapter、KV binding、Worker 入口和
+SSR 路由现在已由代码提供；这些文件不应再被描述为“缺失”。CI 仍是代码质量流水线，
+生产 Cloudflare 资源的变更仍不由本地验收自动执行。
 
 本次对正式域名进行了只读访问，浏览工具未取得页面，命令行 TLS 握手失败，无法验证线上响应、Pages 项目名或控制台设置。没有访问 Cloudflare 账号，因此**不能声称已核实生产运行于 Pages 或已核实其绑定**。阶段 1 必须导出现有部署配置；推荐方案以当前代码和 Pages 线索为依据，部署核验是发布前置工作，不阻塞本计划定稿。
 
-未安装依赖或运行当前应用构建；以下是代码审阅事实，不能替代阶段 1 的构建基线。
+计划编写时未安装依赖或运行构建；后续执行结果见验收矩阵，不与本历史段落混用。
 
 ### 2.2 已实现能力：明确复用
 
 | 能力 | 实际文件与行为 | 本计划处理 |
 | --- | --- | --- |
-| Astro 静态站点 | `astro.config.ts` 没有 `output` 或 adapter；当前默认预渲染 | **复用**静态默认，仅新增指定 SSR 路由 |
+| Astro 静态站点 | `astro.config.ts` 明确使用 `output: "static"` 与 Cloudflare adapter；按需路由声明 `prerender = false` | **已实现**静态默认与少量 SSR |
 | 依赖与检查 | `package.json` 的 Astro 范围 `^5.16.6`；`astro check`、ESLint、Prettier 已存在 | **复用**检查链；增加 Worker/协议/联调检查 |
 | 内容集合 | `src/content.config.ts` 使用 `glob` 和 Zod 定义 `blog`；必填标题、日期、描述，支持标签、草稿、精选和 canonical | **复用**；作品不混入 `blog` 集合 |
 | 文章库 | `src/data/blog/` 下共 48 个 Markdown 文件，15 个显式 `draft: true`；含 tutorials、notes、leetcode、_drafts | **复用**全部原稿及目录；实际发布数量以构建为准 |
@@ -57,9 +60,8 @@
 
 ### 2.3 已发现、需要纳入计划的问题
 
-- **锁文件不一致**：`pnpm-lock.yaml` 锁定 Astro 5.16.6，`package-lock.json` 锁定 Astro 5.18.1；CI 用 pnpm 10.11.1，README 引导 npm，Docker 用浮动最新版 pnpm。阶段 1 统一 pnpm 和单一锁文件，记录基线后删除 `package-lock.json`。
-- **部署没有纳入版本控制**：需要新增 Pages Wrangler 配置和独立同步 Worker 配置，并保存控制台配置清单。
-- **Pagefind 构建含平台差异**：当前脚本为 `astro check && astro build && pagefind --site dist && cp -r dist/pagefind public/`。将最后一步替换为 Node 文件复制脚本，明确清理旧生成目录，兼容 Windows；继续索引实际静态 HTML。
+- **工具链/部署状态**：当前仓库以 `pnpm-lock.yaml`、`typecheck`、CI 和两个 Wrangler 配置为准；生产 namespace、Access 和 secret 仍由目标环境管理，不能写入验收输出。
+- **Pagefind 构建**：已使用跨平台复制脚本，并由 `build`、`check:artifact` 和博客 e2e 回归共同验证。
 - **结构化数据类型不正确**：`Layout.astro` 对所有页面输出 `BlogPosting`，无日期时可能生成字符串 `"undefined"`。应由页面传入结构化数据，非文章页使用正确类型。
 - **发布时间过滤不一致**：列表、RSS 使用 `postFilter`，文章详情静态路径、文章 OG、归档主要只检查 `draft`。修复入口一致性，避免未来文章通过直接 URL 或 sitemap 提前暴露。
 - **草稿目录不能仅凭注释判断**：glob 的 `[^_]*.md` 限制文件名，不足以把 `_drafts/` 的所有后代自动视为未发布。现有文件有显式草稿字段；增加目录排除规则及构建验证，不依赖 `CLAUDE.md` 中对该 glob 的说明。

@@ -1,0 +1,232 @@
+name: Portfolio
+
+# GitHub Actions owns portfolio synchronization, snapshot generation, and the
+# site build. Generated-data commits must not trigger this workflow again.
+
+on:
+  schedule:
+    # UTC: synchronize public repositories once per hour.
+    - cron: "0 * * * *"
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "作品数据范围，或只构建现有数据"
+        required: true
+        type: choice
+        options:
+          - full
+          - repo
+          - build
+        default: build
+      repo_id:
+        description: "mode=repo 时填写 GitHub 数字仓库 ID"
+        required: false
+        type: string
+      deploy:
+        description: "构建后允许使用 Actions 部署到 Pages（需先切换唯一部署所有者）"
+        required: true
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+# Do not cancel a running sync/build.  A second manual dispatch waits instead
+# of creating concurrent KV writers or a second Pages deployment.
+concurrency:
+  group: portfolio-production
+  cancel-in-progress: false
+
+jobs:
+  resolve:
+    name: Resolve workflow mode
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      mode: ${{ steps.mode.outputs.mode }}
+      repo_id: ${{ steps.mode.outputs.repo_id }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Resolve and validate inputs
+        id: mode
+        env:
+          WORKFLOW_EVENT: ${{ github.event_name }}
+          REQUESTED_MODE: ${{ inputs.mode || '' }}
+          REQUESTED_REPO_ID: ${{ inputs.repo_id || '' }}
+        run: node scripts/portfolio/resolve.mjs
+
+  sync:
+    name: Generate portfolio data
+    needs: resolve
+    if: needs.resolve.outputs.mode == 'full' || needs.resolve.outputs.mode == 'repo'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.11.1
+
+      - name: Use Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies (frozen lockfile)
+        run: pnpm install --frozen-lockfile
+
+      - name: Synchronize GitHub data and build projects snapshot
+        env:
+          GITHUB_TOKEN: ${{ secrets.PORTFOLIO_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
+          GITHUB_OWNER: jesongit
+          GITHUB_OWNER_TYPE: user
+          PORTFOLIO_MODE: ${{ needs.resolve.outputs.mode }}
+          PORTFOLIO_REPO_ID: ${{ needs.resolve.outputs.repo_id }}
+          PORTFOLIO_WRITE_DATA: "true"
+        run: >-
+          pnpm run portfolio:sync --
+          ${{ needs.resolve.outputs.mode }}
+          ${{ needs.resolve.outputs.mode == 'repo' && needs.resolve.outputs.repo_id || '' }}
+          --state .cache/portfolio-state.json
+          --output data/portfolio/projects.json
+
+      - name: Commit changed portfolio data
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/portfolio/settings.json data/portfolio/sources.json data/portfolio/projects.json
+          if git diff --cached --quiet; then
+            echo "No portfolio data changes"
+          else
+            git commit -m "chore(portfolio): sync projects"
+            git push
+          fi
+
+  build:
+    name: Build portfolio site
+    needs: [resolve, sync]
+    if: >-
+      always() &&
+      (needs.resolve.outputs.mode == 'build' ||
+      needs.sync.result == 'success')
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.11.1
+
+      - name: Use Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies (frozen lockfile)
+        run: pnpm install --frozen-lockfile
+
+      - name: Rebuild public snapshot from settings and sources
+        if: needs.resolve.outputs.mode == 'build'
+        env:
+          GITHUB_OWNER: jesongit
+          GITHUB_OWNER_TYPE: user
+        run: >-
+          pnpm run portfolio:sync -- build
+          --state .cache/portfolio-state.json
+          --output data/portfolio/projects.json
+
+      - name: Commit build-only snapshot changes
+        if: needs.resolve.outputs.mode == 'build'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/portfolio/projects.json
+          if git diff --cached --quiet; then
+            echo "No public snapshot changes"
+          else
+            git commit -m "chore(portfolio): rebuild public snapshot"
+            git push
+          fi
+
+      - name: Build site from the checked-in snapshot
+        run: pnpm run build
+
+      - name: Check generated artifact
+        run: pnpm run check:artifact && pnpm run check:routes
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: portfolio-dist-${{ github.run_id }}
+          path: dist
+          if-no-files-found: error
+          retention-days: 1
+
+      - name: Explain production deployment ownership
+        if: vars.PORTFOLIO_PAGES_DEPLOY_OWNER != 'github-actions'
+        run: >-
+          echo "Pages deploy skipped: PORTFOLIO_PAGES_DEPLOY_OWNER is not
+          github-actions. The configured Pages Git integration remains the
+          production deployment owner."
+
+  deploy:
+    name: Deploy Pages site (Actions owner only)
+    needs: [resolve, build]
+    if: >-
+      needs.build.result == 'success' &&
+      vars.PORTFOLIO_PAGES_DEPLOY_OWNER == 'github-actions' &&
+      (github.event_name == 'schedule' || inputs.deploy == true)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: production
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - name: Checkout repository for the locked Wrangler version
+        uses: actions/checkout@v4
+
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: portfolio-dist-${{ github.run_id }}
+          path: dist
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.11.1
+
+      - name: Use Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies (frozen lockfile)
+        run: pnpm install --frozen-lockfile
+
+      - name: Deploy the one configured Pages production owner
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_PAGES_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_PAGES_PROJECT: ${{ vars.CLOUDFLARE_PAGES_PROJECT || 'astro' }}
+        run: >-
+          pnpm exec wrangler pages deploy dist
+          --project-name "$CLOUDFLARE_PAGES_PROJECT"

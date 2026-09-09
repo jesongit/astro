@@ -13,9 +13,23 @@ export const prerender = false;
 <AdminLayout title={`作品管理 | ${SITE.title}`}>
   <main data-admin-root class="mx-auto w-full max-w-5xl px-4 py-8">
     <header class="mb-6 flex flex-wrap items-baseline justify-between gap-3">
-      <h1 class="font-serif text-2xl font-bold tracking-wide">作品管理</h1>
-      <div class="flex items-center gap-3 text-sm text-foreground/60">
+      <div class="flex items-center gap-4">
+        <a
+          href="/"
+          data-unsaved-navigation
+          class="btn-line"
+          aria-label="返回网站">返回网站</a
+        >
+        <h1 class="font-serif text-2xl font-bold tracking-wide">作品管理</h1>
+      </div>
+      <div
+        class="flex flex-wrap items-center justify-end gap-3 text-sm text-foreground/60"
+      >
         <span id="admin-identity">…</span>
+        <button id="btn-save-all" class="btn-line" type="button" disabled
+          >保存全部</button
+        >
+        <span id="save-all-state" aria-live="polite"></span>
         <button id="btn-full-sync" class="btn-line" type="button"
           >全量同步</button
         >
@@ -29,7 +43,8 @@ export const prerender = false;
     >
       <p>
         <span class="font-semibold text-foreground">操作说明：</span>
-        筛选和搜索只作用于本次已加载的数据，不会重复请求；“展示”控制作品是否出现在公开列表；“精选”只影响首页精选；排序值越小优先级越高，“↑/↓”只在本地调整排序值，点击“保存设置”后生效；“同步此仓库”只同步当前仓库，“全量同步”同步全部候选。点击“刷新”才会重新读取最新数据。
+        展示、精选和排序先保存在本地草稿，点击单项“保存设置”或“保存全部”后才生效；排序值越小优先级越高。搜索和筛选只作用于已完整加载的候选清单；“同步”和“全量同步”会显示
+        GitHub Actions 的实际状态。点击“刷新”会重新读取最新数据，有未保存修改时将先确认。
       </p>
     </section>
 
@@ -52,6 +67,11 @@ export const prerender = false;
         <option value="config_error">配置错误</option>
         <option value="sync_error">同步异常</option>
       </select>
+      <span
+        id="dirty-meta"
+        class="text-xs text-foreground/60"
+        aria-live="polite">没有未保存修改</span
+      >
       <button id="btn-reload" class="btn-line" type="button">刷新</button>
     </section>
 

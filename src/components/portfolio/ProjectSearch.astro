@@ -66,11 +66,23 @@
       for (const r of results) {
         const li = document.createElement("li");
         li.className = "border-b border-border py-3";
-        li.innerHTML = `
-          <a class="text-accent hover:underline underline-offset-4" href="${r.href}">${r.title}</a>
-          <p class="text-sm text-foreground/70">${r.summary}</p>
-          ${r.topics.length ? `<p class="mt-1 text-xs text-foreground/50">${r.topics.map(t => `#${t}`).join(" ")}</p>` : ""}
-        `;
+        const link = document.createElement("a");
+        link.className = "text-accent hover:underline underline-offset-4";
+        link.href = r.href;
+        link.textContent = r.title;
+        li.append(link);
+
+        const summary = document.createElement("p");
+        summary.className = "text-sm text-foreground/70";
+        summary.textContent = r.summary;
+        li.append(summary);
+
+        if (r.topics.length > 0) {
+          const topics = document.createElement("p");
+          topics.className = "mt-1 text-xs text-foreground/50";
+          topics.textContent = r.topics.map(topic => `#${topic}`).join(" ");
+          li.append(topics);
+        }
         listEl.append(li);
       }
     };
@@ -92,6 +104,7 @@
             signal: controller.signal,
           }
         );
+        if (!response.ok) throw new Error("project search failed");
         const data = (await response.json()) as {
           results: {
             href: string;

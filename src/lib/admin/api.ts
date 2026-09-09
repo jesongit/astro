@@ -9,6 +9,14 @@ import {
   type PortfolioKV,
 } from "@/lib/portfolio/store";
 import { LIMITS } from "@/lib/portfolio/config";
+import {
+  GitHubAdminClient,
+  GitHubAdminError,
+  getGitHubAdminConfig,
+  SettingsConflictError,
+  SettingsFileError,
+} from "./github";
+import { createSettingsBackend, type AdminSettingsBackend } from "./settings";
 
 export interface ApiErrorBody {
   code: string;
@@ -21,7 +29,11 @@ export interface ApiErrorBody {
 export const jsonOk = (data: unknown, status = 200): Response =>
   new Response(JSON.stringify(data), {
     status,
-    headers: { "Content-Type": "application/json; charset=utf-8" },
+    headers: {
+      "Content-Type": "application/json; charset=utf-8",
+      "Cache-Control": "private, no-store",
+      "X-Robots-Tag": "noindex, nofollow",
+    },
   });
 
 export const jsonError = (
@@ -37,7 +49,14 @@ export const jsonError = (
       requestId: crypto.randomUUID(),
       ...extra,
     }),
-    { status, headers: { "Content-Type": "application/json; charset=utf-8" } }
+    {
+      status,
+      headers: {
+        "Content-Type": "application/json; charset=utf-8",
+        "Cache-Control": "private, no-store",
+        "X-Robots-Tag": "noindex, nofollow",
+      },
+    }
   );
 
 /** 读取并校验 JSON body:≤16KiB、对象、未知字段拒绝 */
@@ -84,25 +103,75 @@ export async function readJsonBody(
 }
 
 export interface AdminRuntime {
-  control: ControlStore;
-  cache: PublicCacheStore;
-  jobs: JobsStore;
+  /** Optional legacy read/write adapters retained only for old deployments. */
+  control: ControlStore | null;
+  cache: PublicCacheStore | null;
+  jobs: JobsStore | null;
+  github: GitHubAdminClient | null;
 }
 
-/** 从 locals.runtime.env 构造只读/受限存储;缺失时返回 null(调用方 503) */
+/** 从 locals.runtime.env 构造 GitHub 优先的管理运行时。 */
 export function adminRuntime(locals: App.Locals): AdminRuntime | null {
-  const env = locals.runtime?.env ?? {};
+  const env = (locals.runtime?.env ?? {}) as Record<string, unknown>;
   const control = env.PORTFOLIO_CONTROL as PortfolioKV | undefined;
   const cache = env.PORTFOLIO_CACHE as PortfolioKV | undefined;
   const jobs = env.PORTFOLIO_JOBS as PortfolioKV | undefined;
-  if (!control || !cache || !jobs) return null;
-  if (typeof control.get !== "function") return null;
+  const validControl =
+    control && typeof control.get === "function"
+      ? new ControlStore(control)
+      : null;
+  const githubConfig = getGitHubAdminConfig(env);
+  const github = githubConfig ? new GitHubAdminClient(githubConfig) : null;
+  if (!github && (!cache || !jobs)) return null;
   return {
-    control: new ControlStore(control),
-    cache: new PublicCacheStore(cache),
-    jobs: new JobsStore(jobs),
+    control: validControl,
+    cache: cache ? new PublicCacheStore(cache) : null,
+    jobs: jobs ? new JobsStore(jobs) : null,
+    github,
   };
 }
 
+export function adminSettings(
+  runtime: AdminRuntime
+): AdminSettingsBackend | null {
+  return createSettingsBackend(runtime.github, runtime.control);
+}
+
+/** Convert safe, classified upstream/configuration failures to API errors. */
+export function adminIntegrationError(error: unknown): Response {
+  if (error instanceof SettingsConflictError) {
+    return jsonError(409, "settings_conflict", error.message, {
+      fieldErrors: [{ path: "revision", message: "设置文件版本已变化。" }],
+    });
+  }
+  if (error instanceof SettingsFileError) {
+    return jsonError(502, "settings_invalid", error.message);
+  }
+  if (error instanceof GitHubAdminError) {
+    if (error.status === 409) {
+      return jsonError(
+        409,
+        "settings_conflict",
+        "设置文件版本已变化,请刷新后重试。"
+      );
+    }
+    if (error.status === 401) {
+      return jsonError(503, "github_unconfigured", "GitHub 服务端凭据不可用。");
+    }
+    if (error.status === 403 || error.status === 429) {
+      return jsonError(
+        503,
+        "github_rate_limited",
+        "GitHub 请求受限,请稍后重试。"
+      );
+    }
+    if (error.status === 404) {
+      return jsonError(502, "github_not_found", "GitHub 目标资源不存在。");
+    }
+    return jsonError(503, "github_unavailable", error.message);
+  }
+  return jsonError(503, "admin_upstream_error", "管理服务暂时不可用。");
+}
+
 export const notConfigured = (): Response =>
-  jsonError(503, "bindings_missing", "KV 绑定不可用,暂不能管理作品。");
+  jsonError(503, "admin_unconfigured", "GitHub 管理服务尚未配置。");

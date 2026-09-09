@@ -1,10 +1,12 @@
 import type { APIRoute } from "astro";
 import {
+  adminIntegrationError,
   adminRuntime,
   jsonError,
   jsonOk,
   notConfigured,
 } from "@/lib/admin/api";
+import { decodeActionHandle, type ActionRunSummary } from "@/lib/admin/github";
 
 export const prerender = false;
 
@@ -14,24 +16,55 @@ export const GET: APIRoute = async context => {
   if (!runtime) return notConfigured();
 
   const jobId = context.params.jobId ?? "";
-  if (!jobId || jobId.length > 64) {
+  if (!jobId || jobId.length > 512) {
     return jsonError(404, "invalid_job_id", "任务 ID 不合法。");
   }
 
-  const request = await runtime.jobs.getRequest(jobId);
-  const results = await runtime.jobs.getResults(jobId);
-  if (!request && results.length === 0) {
-    return jsonError(404, "job_not_found", "任务不存在或已过期。");
+  if (!runtime.github) {
+    return jsonError(503, "github_unconfigured", "GitHub Actions 未配置。");
   }
 
-  const latest = results[0] ?? null;
-  return jsonOk({
-    jobId,
-    request: request ?? null,
-    results,
-    state: latest?.state ?? (request ? "queued" : "unknown"),
-    counts: latest?.counts ?? null,
-    errorCodes: latest?.errorCodes ?? null,
-    retryAt: latest?.retryAt ?? null,
-  });
+  try {
+    let run: ActionRunSummary | null = null;
+    const handle = decodeActionHandle(jobId);
+    if (/^\d{1,32}$/.test(jobId)) {
+      run = await runtime.github.getWorkflowRun(jobId);
+      if (!run)
+        return jsonError(404, "run_not_found", "Actions run 不存在或已过期。");
+    } else if (!handle) {
+      return jsonError(404, "invalid_job_id", "任务 ID 不合法。");
+    } else {
+      const runs = await runtime.github.listWorkflowRuns();
+      const startAt = Date.parse(handle.createdAt);
+      run =
+        runs
+          .filter(candidate => {
+            const createdAt = candidate.createdAt
+              ? Date.parse(candidate.createdAt)
+              : NaN;
+            return (
+              Number.isFinite(startAt) &&
+              Number.isFinite(createdAt) &&
+              createdAt >= startAt - 60_000
+            );
+          })
+          .sort(
+            (a, b) =>
+              Date.parse(b.createdAt ?? "") - Date.parse(a.createdAt ?? "")
+          )[0] ?? null;
+    }
+
+    return jsonOk({
+      jobId,
+      runId: run?.runId ?? null,
+      run,
+      state: run?.state ?? "queued",
+      counts: null,
+      errorCodes: null,
+      retryAt: null,
+      publishState: run?.state === "succeeded" ? "published" : "dispatched",
+    });
+  } catch (error) {
+    return adminIntegrationError(error);
+  }
 };

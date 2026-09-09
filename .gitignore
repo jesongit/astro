@@ -29,6 +29,7 @@ pnpm-debug.log*
 public/pagefind
 # Wrangler / Cloudflare local state
 .wrangler/
+.cache/
 .dev.vars
 .dev.vars.*
 !.dev.vars.example

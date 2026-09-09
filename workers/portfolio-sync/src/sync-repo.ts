@@ -393,7 +393,10 @@ export async function syncRepoById(
             configState = "invalid";
             warnings.push("config_invalid:screenshot_path");
           } else {
-            normalizedConfig.screenshots = shots;
+            normalizedConfig.screenshots = shots.filter(
+              (shot): shot is NonNullable<(typeof shots)[number]> =>
+                shot !== null
+            );
           }
         }
 
@@ -451,11 +454,12 @@ export async function syncRepoById(
 
   // ── 4/6. 先 payload 后观察 ──
   let payloadHash = prevHash;
-  if (configState !== "invalid") {
+  // 首次遇到坏配置时没有 LKG,仍应发布基础内容;只有存在 LKG 才复用旧引用。
+  if (configState !== "invalid" || !prevHash) {
     const content = normalizeContent({
       base,
-      config: normalizedConfig,
-      enhancedBody,
+      config: configState === "invalid" ? null : normalizedConfig,
+      enhancedBody: configState === "invalid" ? null : enhancedBody,
       release,
       sanitizerVersion: SANITIZER_VERSION,
     });

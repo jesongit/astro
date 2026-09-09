@@ -41,14 +41,9 @@ const featuredPosts = sortedPosts.filter(({ data }) => data.featured);
 const recentPosts = sortedPosts.filter(({ data }) => !data.featured);
 
 // 经发布门禁的精选与已展示作品(按人工顺序)
-const featuredProjects = await listPublicProjects(Astro.locals, {
-  featuredOnly: true,
-  limit: 6,
-});
-const latestProjects =
-  featuredProjects.length === 0
-    ? await listPublicProjects(Astro.locals, { limit: 6 })
-    : [];
+// projects.json 已由 Actions 按精选与优先级排序；公开页只读取该快照。
+const featuredProjects = await listPublicProjects(Astro.locals, { limit: 6 });
+const latestProjects: typeof featuredProjects = [];
 const portfolioAvailable =
   featuredProjects.length > 0 || latestProjects.length > 0;
 

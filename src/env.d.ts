@@ -15,11 +15,42 @@ interface Window {
  */
 declare const SITE_BUILD_TIME: number;
 
+/**
+ * Server-side Cloudflare bindings and GitHub integration variables.  These
+ * values are read only from Astro.locals.runtime and are never public env
+ * variables; in particular GITHUB_TOKEN must not use a PUBLIC_ prefix.
+ */
+interface AppRuntimeEnv {
+  PORTFOLIO_CONTROL?: unknown;
+  PORTFOLIO_CACHE?: unknown;
+  PORTFOLIO_JOBS?: unknown;
+  GITHUB_TOKEN?: string;
+  GITHUB_PAT?: string;
+  GITHUB_REPOSITORY?: string;
+  GITHUB_OWNER?: string;
+  GITHUB_REPO?: string;
+  GITHUB_REPOSITORY_NAME?: string;
+  GITHUB_BRANCH?: string;
+  PORTFOLIO_BRANCH?: string;
+  GITHUB_SETTINGS_PATH?: string;
+  PORTFOLIO_SETTINGS_PATH?: string;
+  GITHUB_WORKFLOW_ID?: string;
+  GITHUB_WORKFLOW_FILE?: string;
+  PORTFOLIO_WORKFLOW_ID?: string;
+  PORTFOLIO_WORKFLOW?: string;
+  GITHUB_API_VERSION?: string;
+  ACCESS_TEAM_DOMAIN?: string;
+  ACCESS_AUD?: string;
+  ADMIN_EMAILS?: string;
+  ADMIN_ALLOWED_HOSTS?: string;
+  CSRF_SECRET?: string;
+}
+
 declare namespace App {
   interface Locals {
     /** @astrojs/cloudflare 12.x 注入的运行时;本地 dev 由 platformProxy 模拟 */
     runtime?: {
-      env: Partial<Record<string, unknown>>;
+      env: Partial<AppRuntimeEnv>;
     };
     /** 管理路径鉴权通过后由 middleware 注入(计划 §10) */
     adminIdentity?: { email: string; sub: string };

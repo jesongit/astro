@@ -1,13 +1,15 @@
 import type { APIRoute } from "astro";
 import {
+  adminIntegrationError,
   adminRuntime,
+  adminSettings,
   jsonError,
   jsonOk,
   notConfigured,
   readJsonBody,
 } from "@/lib/admin/api";
 import { ADMIN } from "@/lib/portfolio/config";
-import type { AuditEntry, DisplaySettings } from "@/lib/portfolio/types";
+import { settingsEntry, settingsRevision } from "@/lib/admin/settings";
 
 export const prerender = false;
 
@@ -16,6 +18,9 @@ const ALLOWED_KEYS = [
   "featured",
   "order",
   "revision",
+  "sha",
+  "baseSha",
+  "expectedSha",
   "acknowledgedIncidentId",
 ] as const;
 
@@ -29,6 +34,10 @@ export const PATCH: APIRoute = async context => {
   if (!runtime) return notConfigured();
   const identity = context.locals.adminIdentity;
   if (!identity) return jsonError(401, "unauthenticated", "未通过管理鉴权。");
+  const backend = adminSettings(runtime);
+  if (!backend) {
+    return jsonError(503, "settings_unconfigured", "GitHub 设置存储未配置。");
+  }
 
   const repoId = context.params.repoId ?? "";
   if (!/^\d{1,12}$/.test(repoId)) {
@@ -42,20 +51,33 @@ export const PATCH: APIRoute = async context => {
     featured?: unknown;
     order?: unknown;
     revision?: unknown;
+    sha?: unknown;
+    baseSha?: unknown;
+    expectedSha?: unknown;
     acknowledgedIncidentId?: unknown;
   };
 
-  const before = await runtime.control.getSettings(repoId);
+  const revisionResult = parseRevisionAliases(body);
+  if (!revisionResult.ok) return revisionResult.response;
+  if (!revisionResult.provided) {
+    return jsonError(400, "revision_required", "必须携带已读设置文件 SHA。");
+  }
+  const revision = revisionResult.value;
+
+  let snapshot;
+  try {
+    snapshot = await backend.read();
+  } catch (error) {
+    return adminIntegrationError(error);
+  }
+  const before = settingsEntry(snapshot, repoId);
   // 首次保存时设置记录尚不存在,前端读取到空字符串作为“已读 revision”。
   // 只有已有设置时才要求非空 revision,避免首次保存被错误拦截。
-  if (
-    typeof body.revision !== "string" ||
-    (body.revision === "" && before !== null)
-  ) {
+  if (revision === undefined || (revision === "" && before !== null)) {
     return jsonError(400, "revision_required", "必须携带已读 revision。");
   }
 
-  if (before && before.revision !== body.revision) {
+  if (before && settingsRevision(snapshot, repoId) !== revision) {
     return jsonError(
       409,
       "revision_conflict",
@@ -85,6 +107,7 @@ export const PATCH: APIRoute = async context => {
   }
   if (
     body.acknowledgedIncidentId !== undefined &&
+    body.acknowledgedIncidentId !== null &&
     typeof body.acknowledgedIncidentId !== "string"
   ) {
     return jsonError(
@@ -96,7 +119,9 @@ export const PATCH: APIRoute = async context => {
 
   // 恢复展示必须显式确认最新 incident(由服务端按当前事件生成,§8.4)
   if (body.visible === true && body.acknowledgedIncidentId === undefined) {
-    const incidents = await runtime.cache.getIncidents(repoId);
+    const incidents = runtime.cache
+      ? await runtime.cache.getIncidents(repoId)
+      : [];
     if (incidents.length > 0) {
       const latest = incidents.reduce((a, b) =>
         Date.parse(a.observedAt) >= Date.parse(b.observedAt) ? a : b
@@ -116,55 +141,90 @@ export const PATCH: APIRoute = async context => {
     }
   }
 
-  const next: Omit<DisplaySettings, "revision" | "updatedAt"> = {
-    schemaVersion: 1,
-    repoId,
-    visible:
-      typeof body.visible === "boolean"
-        ? body.visible
-        : (before?.visible ?? false),
-    featured:
-      typeof body.featured === "boolean"
-        ? body.featured
-        : (before?.featured ?? false),
-    order:
-      typeof body.order === "number"
-        ? body.order
-        : (before?.order ?? ADMIN.defaultOrder),
-    acknowledgedIncidentId:
-      typeof body.acknowledgedIncidentId === "string"
-        ? body.acknowledgedIncidentId
-        : (before?.acknowledgedIncidentId ?? null),
-    updatedBy: identity.email,
-  };
-  // 取消精选/隐藏时精选无效:保留字段但公开层忽略(§4.1)
-  const saved = await runtime.control.putSettings(repoId, next, body.revision);
-  if (!saved) {
-    return jsonError(409, "revision_conflict", "设置已被修改,请刷新后重试。");
+  const patch: Record<string, unknown> = {};
+  if (body.visible !== undefined) patch.visible = body.visible;
+  if (body.featured !== undefined) patch.featured = body.featured;
+  if (body.order !== undefined) patch.order = body.order;
+  if (body.acknowledgedIncidentId !== undefined) {
+    patch.acknowledgedIncidentId = body.acknowledgedIncidentId;
   }
-
-  const audit: AuditEntry = {
-    schemaVersion: 1,
-    at: new Date().toISOString(),
-    actor: identity.email,
-    repoId,
-    action: "settings.update",
-    before: before
-      ? {
-          visible: before.visible,
-          featured: before.featured,
-          order: before.order,
-          acknowledgedIncidentId: before.acknowledgedIncidentId,
-        }
-      : null,
-    after: {
-      visible: saved.visible,
-      featured: saved.featured,
-      order: saved.order,
-      acknowledgedIncidentId: saved.acknowledgedIncidentId,
-    },
-  };
-  await runtime.control.appendAudit(audit);
-
-  return jsonOk({ settings: saved });
+  try {
+    const saved = await backend.save(
+      { [repoId]: patch },
+      revision,
+      identity.email
+    );
+    let publishState = "not_dispatched";
+    let publishJobId: string | null = null;
+    if (saved.committed && runtime.github) {
+      try {
+        const dispatched = await runtime.github.dispatchWorkflow({
+          kind: "build",
+        });
+        publishState = "dispatched";
+        publishJobId = dispatched.dispatchId;
+      } catch {
+        publishState = "dispatch_failed";
+      }
+    }
+    const entry = saved.settings[repoId] ?? {
+      visible: false,
+      featured: false,
+      order: ADMIN.defaultOrder,
+      acknowledgedIncidentId: null,
+    };
+    return jsonOk({
+      source: saved.source,
+      committed: saved.committed,
+      saveState: saved.committed ? "saved" : "unchanged",
+      publishState,
+      publishJobId,
+      changedRepoIds: saved.changedRepoIds,
+      settings: {
+        ...entry,
+        repoId,
+        revision: saved.revisions[repoId] ?? saved.sha ?? "",
+      },
+      sha: saved.sha,
+      commitSha: saved.commitSha,
+    });
+  } catch (error) {
+    return adminIntegrationError(error);
+  }
 };
+
+export const PUT = PATCH;
+
+function parseRevisionAliases(
+  body: Record<string, unknown>
+):
+  | { ok: true; value: string | undefined; provided: boolean }
+  | { ok: false; response: Response } {
+  const aliases = ["revision", "sha", "baseSha", "expectedSha"]
+    .filter(key => body[key] !== undefined)
+    .map(key => body[key]);
+  if (aliases.length === 0)
+    return { ok: true, value: undefined, provided: false };
+  if (aliases.some(value => typeof value !== "string")) {
+    return {
+      ok: false,
+      response: jsonError(
+        400,
+        "revision_required",
+        "设置文件 SHA 必须是字符串。"
+      ),
+    };
+  }
+  const unique = new Set(aliases as string[]);
+  if (unique.size > 1) {
+    return {
+      ok: false,
+      response: jsonError(
+        409,
+        "settings_conflict",
+        "设置文件 SHA 参数不一致。"
+      ),
+    };
+  }
+  return { ok: true, value: aliases[0] as string, provided: true };
+}

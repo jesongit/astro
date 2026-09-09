@@ -1,26 +1,12 @@
 {
   // ⚠️ 占位配置:实际项目名、namespace ID、Access 值必须由拥有 Cloudflare
   // 权限的操作者在阶段 1 导出现有 Pages 项目后填写(计划 §14.1)。
-  // 本文件不是可用的生产配置;真实值绝不能凭猜测填写或提交。
+  // Pages 站点不再绑定旧作品 KV；真实 Access/secret 配置由 Pages 项目维护。
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "astro",
   "pages_build_output_dir": "./dist",
   "compatibility_date": "2026-09-08",
   "compatibility_flags": ["nodejs_compat"],
-  "kv_namespaces": [
-    {
-      "binding": "PORTFOLIO_CONTROL",
-      "id": "df503d6e96044f14a0d2ca80b3b5a4ae",
-    },
-    {
-      "binding": "PORTFOLIO_CACHE",
-      "id": "9281f24d065c4a69af0ad5b9ba7dd92b",
-    },
-    {
-      "binding": "PORTFOLIO_JOBS",
-      "id": "dc8fa48729824c2b96c7fdeb4ced286d",
-    },
-  ],
   "vars": {
     // 站点实际运行在裸域 posase.im(www 无 DNS 记录,Pages 自定义域也仅裸域)
     "ACCESS_TEAM_DOMAIN": "posase.cloudflareaccess.com",
@@ -31,20 +17,6 @@
   },
   "env": {
     "preview": {
-      "kv_namespaces": [
-        {
-          "binding": "PORTFOLIO_CONTROL",
-          "id": "9c9db59639bf45d497340d4b50a887a7",
-        },
-        {
-          "binding": "PORTFOLIO_CACHE",
-          "id": "dc25fade92514d8781ee0a6efb91bad7",
-        },
-        {
-          "binding": "PORTFOLIO_JOBS",
-          "id": "c784e70dbc354451892fa2d1a09b18f5",
-        },
-      ],
       "vars": {
         // 预览部署在 *.astro.pages.dev,Access 应用无法覆盖该域名:
         // ADMIN_ALLOWED_HOSTS 预留独立测试域名,ACCESS_AUD 留空 → 管理路径失败关闭(503)。

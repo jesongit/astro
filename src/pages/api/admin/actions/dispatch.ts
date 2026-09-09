@@ -13,11 +13,7 @@ export const prerender = false;
 
 const ALLOWED_KEYS = ["scope"] as const;
 
-/**
- * POST /api/admin/sync(计划 §10.2/§8.2):
- * 创建手动任务,返回 202 + jobId,不谎称同步已完成;
- * 全量 10 分钟 / 单仓库 60 秒冷却(KV 尽力冷却,边缘限流兜底)。
- */
+/** Explicit Actions API alias used by newer admin clients. */
 export const POST: APIRoute = async context => {
   const runtime = adminRuntime(context.locals);
   if (!runtime) return notConfigured();
@@ -29,32 +25,15 @@ export const POST: APIRoute = async context => {
 
   const parsed = await readJsonBody(context.request, ALLOWED_KEYS);
   if (!parsed.ok) return parsed.response;
-  const scope = parsed.body.scope;
-  if (typeof scope !== "object" || scope === null) {
-    return jsonError(400, "invalid_scope", "缺少 scope。");
-  }
-  const s = scope as Record<string, unknown>;
-  let normalizedScope: ActionsScope;
-  if (s.kind === "all" && Object.keys(s).length === 1) {
-    normalizedScope = { kind: "all" };
-  } else if (
-    s.kind === "repo" &&
-    typeof s.repoId === "string" &&
-    Object.keys(s).length === 2
-  ) {
-    if (!/^\d{1,12}$/.test(s.repoId)) {
-      return jsonError(422, "invalid_field", "repoId 不合法。");
-    }
-    normalizedScope = { kind: "repo", repoId: s.repoId };
-  } else {
+  const scope = normalizeScope(parsed.body.scope);
+  if (!scope)
     return jsonError(422, "invalid_scope", "scope 只支持 all 或 repo+repoId。");
-  }
 
   try {
-    const dispatched = await runtime.github.dispatchWorkflow(normalizedScope);
+    const dispatched = await runtime.github.dispatchWorkflow(scope);
     const jobId = encodeActionHandle({
       dispatchId: dispatched.dispatchId,
-      scope: normalizedScope,
+      scope,
       createdAt: dispatched.createdAt,
     });
     return jsonOk(
@@ -63,7 +42,7 @@ export const POST: APIRoute = async context => {
         dispatchId: dispatched.dispatchId,
         runId: dispatched.runId,
         state: dispatched.state,
-        scope: normalizedScope,
+        scope,
         requestedBy: identity.email,
         createdAt: dispatched.createdAt,
         dispatchState: "dispatched",
@@ -75,3 +54,20 @@ export const POST: APIRoute = async context => {
     return adminIntegrationError(error);
   }
 };
+
+function normalizeScope(value: unknown): ActionsScope | null {
+  if (typeof value !== "object" || value === null || Array.isArray(value))
+    return null;
+  const record = value as Record<string, unknown>;
+  if (record.kind === "all" && Object.keys(record).length === 1)
+    return { kind: "all" };
+  if (
+    record.kind === "repo" &&
+    typeof record.repoId === "string" &&
+    /^\d{1,12}$/.test(record.repoId) &&
+    Object.keys(record).length === 2
+  ) {
+    return { kind: "repo", repoId: record.repoId };
+  }
+  return null;
+}

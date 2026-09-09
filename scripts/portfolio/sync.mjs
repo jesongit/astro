@@ -114,15 +114,27 @@ const priorBase = (record, repository, fullName) => {
 
 const mergeWarnings = warnings => [...new Set(warnings)].sort();
 
+const withoutObservationTimes = record => {
+  if (!record) return record;
+  const copy = { ...record };
+  delete copy.observedAt;
+  delete copy.lastPublicVerifiedAt;
+  delete copy.lastContentSuccessAt;
+  delete copy.releaseLastSuccessAt;
+  return copy;
+};
+
+const recordChanged = (previous, next) =>
+  !previous ||
+  stableStringify(withoutObservationTimes(previous)) !==
+    stableStringify(withoutObservationTimes(next));
+
 const addIncident = (record, repoId, fullName, reason, observedAt) => {
   const incidents = Array.isArray(record?.incidents)
     ? [...record.incidents]
     : [];
   const exists = incidents.some(
-    item =>
-      item?.reason === reason &&
-      item?.fullName === fullName &&
-      item?.observedAt === observedAt
+    item => item?.reason === reason && item?.fullName === fullName
   );
   if (!exists) {
     incidents.push({
@@ -388,7 +400,7 @@ async function syncRepository({ client, state, target, knownEntry, now }) {
   const observedAt = iso(now);
   const warnings = [];
   if (!resolved.repository) {
-    state.records[repoId] = {
+    const next = {
       ...(previous ?? {}),
       repoId,
       fullName: previous?.fullName ?? resolved.fullName,
@@ -398,10 +410,11 @@ async function syncRepository({ client, state, target, knownEntry, now }) {
       lastPublicVerifiedAt: previous?.lastPublicVerifiedAt ?? null,
       warnings: ["identity_unresolved"],
     };
+    state.records[repoId] = recordChanged(previous, next) ? next : previous;
     return {
       repoId,
       state: "partial",
-      changed: true,
+      changed: recordChanged(previous, next),
       warnings: ["identity_unresolved"],
     };
   }
@@ -413,7 +426,7 @@ async function syncRepository({ client, state, target, knownEntry, now }) {
       ? repository.node_id
       : (previous?.nodeId ?? "");
   if (repository.private === true) {
-    state.records[repoId] = {
+    const next = {
       ...(previous ?? {}),
       repoId,
       fullName,
@@ -430,7 +443,9 @@ async function syncRepository({ client, state, target, knownEntry, now }) {
       warnings: [],
       incidents: addIncident(previous, repoId, fullName, "private", observedAt),
     };
-    return { repoId, state: "success", changed: true, warnings: [] };
+    const changed = recordChanged(previous, next);
+    state.records[repoId] = changed ? next : previous;
+    return { repoId, state: "success", changed, warnings: [] };
   }
 
   const owner =
@@ -438,7 +453,7 @@ async function syncRepository({ client, state, target, knownEntry, now }) {
       ? repository.owner.login
       : state.owner;
   if (owner && owner.toLowerCase() !== state.owner.toLowerCase()) {
-    state.records[repoId] = {
+    const next = {
       ...(previous ?? {}),
       repoId,
       fullName,
@@ -461,7 +476,9 @@ async function syncRepository({ client, state, target, knownEntry, now }) {
         observedAt
       ),
     };
-    return { repoId, state: "success", changed: true, warnings: [] };
+    const changed = recordChanged(previous, next);
+    state.records[repoId] = changed ? next : previous;
+    return { repoId, state: "success", changed, warnings: [] };
   }
 
   const facts = factsFromRepo(repository, fullName);
@@ -532,8 +549,7 @@ async function syncRepository({ client, state, target, knownEntry, now }) {
     ? (previous?.payloadHash ?? null)
     : sha256Hex(contentText);
   if (tooLarge) warnings.push("payload_too_large");
-  const changed = payloadHash !== (previous?.payloadHash ?? null);
-  state.records[repoId] = {
+  const nextRecord = {
     ...(previous ?? {}),
     repoId,
     fullName,
@@ -565,6 +581,8 @@ async function syncRepository({ client, state, target, knownEntry, now }) {
     base: toRecordBase(base, baseResult.sha),
     incidents: Array.isArray(previous?.incidents) ? previous.incidents : [],
   };
+  const changed = recordChanged(previous, nextRecord);
+  state.records[repoId] = changed ? nextRecord : previous;
   return {
     repoId,
     state: warnings.length ? "partial" : "success",
@@ -616,7 +634,12 @@ export function buildSnapshot(state, { now = Date.now() } = {}) {
   const projects = [];
   const settings = Object.values(state.settings ?? {})
     .map(publicSettings)
-    .sort((a, b) => a.order - b.order || Number(a.repoId) - Number(b.repoId));
+    .sort(
+      (a, b) =>
+        Number(b.featured) - Number(a.featured) ||
+        a.order - b.order ||
+        Number(a.repoId) - Number(b.repoId)
+    );
   for (const setting of settings) {
     const record = state.records[setting.repoId];
     if (publicationVerdict(setting, record, now).publishable) {
@@ -653,12 +676,125 @@ export function buildSnapshot(state, { now = Date.now() } = {}) {
   };
 }
 
+const DATA_SCHEMA = "../../src/lib/portfolio/schema/data-v1.json";
+
+const readJsonFile = async path => {
+  const { readFile } = await import("node:fs/promises");
+  try {
+    return JSON.parse(await readFile(resolvePath(path), "utf8"));
+  } catch (error) {
+    if (error?.code === "ENOENT") return null;
+    throw new Error("portfolio_data_read_failed");
+  }
+};
+
+const keyedEntries = (value, key) => {
+  if (Array.isArray(value?.[key]))
+    return Object.fromEntries(
+      value[key]
+        .filter(
+          item => isObject(item) && /^\d{1,12}$/.test(String(item.repoId))
+        )
+        .map(item => [String(item.repoId), item])
+    );
+  return isObject(value?.repos) ? value.repos : {};
+};
+
+async function hydrateCheckedInData(state, settingsPath, sourcesPath) {
+  const settings = await readJsonFile(settingsPath);
+  const sources = await readJsonFile(sourcesPath);
+  if (settings)
+    state.settings = {
+      ...keyedEntries(settings, "settings"),
+      ...state.settings,
+    };
+  if (sources) {
+    const sourceEntries = keyedEntries(sources, "sources");
+    state.records = { ...sourceEntries, ...state.records };
+    const inventory = Object.values(sourceEntries).flatMap(record =>
+      isObject(record) &&
+      /^\d{1,12}$/.test(String(record.repoId)) &&
+      typeof record.fullName === "string"
+        ? [
+            {
+              repoId: String(record.repoId),
+              fullName: record.fullName,
+              nodeId: String(record.nodeId ?? ""),
+            },
+          ]
+        : []
+    );
+    if (!state.inventory) {
+      state.inventory = {
+        schemaVersion: 1,
+        runId: "checked-in-sources",
+        completed: true,
+        observedAt: state.updatedAt ?? new Date(0).toISOString(),
+        repos: inventory,
+      };
+    }
+  }
+}
+
+const publicSettingsFile = state => ({
+  $schema: DATA_SCHEMA,
+  schemaVersion: 1,
+  settings: Object.values(state.settings ?? {})
+    .map(publicSettings)
+    .sort((a, b) => Number(a.repoId) - Number(b.repoId)),
+});
+
+const sourcesFile = state => ({
+  $schema: DATA_SCHEMA,
+  schemaVersion: 1,
+  sources: Object.values(state.records ?? {})
+    .sort((a, b) => Number(a.repoId) - Number(b.repoId))
+    .map(record => ({ schemaVersion: 1, ...record })),
+});
+
+const projectsFile = snapshot => ({
+  $schema: DATA_SCHEMA,
+  schemaVersion: 1,
+  projects: snapshot.projects,
+});
+
+async function writePortfolioFiles({
+  state,
+  snapshot,
+  settingsPath,
+  sourcesPath,
+  outputPath,
+}) {
+  const { mkdir, readFile, writeFile } = await import("node:fs/promises");
+  const { dirname, resolve } = await import("node:path");
+  const writes = [
+    [settingsPath, stableStringify(publicSettingsFile(state))],
+    [sourcesPath, stableStringify(sourcesFile(state))],
+    [outputPath, stableStringify(projectsFile(snapshot))],
+  ];
+  for (const [file, content] of writes) {
+    const path = resolve(file);
+    await mkdir(dirname(path), { recursive: true });
+    let previous = null;
+    try {
+      previous = await readFile(path, "utf8");
+    } catch (error) {
+      if (error?.code !== "ENOENT")
+        throw new Error("portfolio_data_read_failed");
+    }
+    if (previous !== content) await writeFile(path, content, "utf8");
+  }
+}
+
 export async function run({
   command,
   target = null,
   statePath = process.env.PORTFOLIO_STATE ?? ".cache/portfolio-state.json",
-  outputPath = process.env.PORTFOLIO_OUTPUT ??
-    "src/data/portfolio/snapshot.json",
+  outputPath = process.env.PORTFOLIO_OUTPUT ?? "data/portfolio/projects.json",
+  settingsPath = process.env.PORTFOLIO_SETTINGS ??
+    "data/portfolio/settings.json",
+  sourcesPath = process.env.PORTFOLIO_SOURCES ?? "data/portfolio/sources.json",
+  writeDataFiles = false,
   owner = process.env.GITHUB_OWNER ?? GITHUB_DEFAULTS.owner,
   ownerType = process.env.GITHUB_OWNER_TYPE ?? GITHUB_DEFAULTS.ownerType,
   token = process.env.GITHUB_TOKEN ?? "",
@@ -672,6 +808,7 @@ export async function run({
     throw new Error("command_invalid");
   const loaded = await readState(statePath, { owner, ownerType });
   const state = loaded.state;
+  await hydrateCheckedInData(state, settingsPath, sourcesPath);
   state.owner = owner;
   state.ownerType = ownerType;
   const client = new GitHubClient({
@@ -692,7 +829,7 @@ export async function run({
     const { dirname, resolve } = await import("node:path");
     const path = resolve(outputPath);
     await mkdir(dirname(path), { recursive: true });
-    const serialized = stableStringify(snapshot);
+    const serialized = stableStringify(projectsFile(snapshot));
     try {
       if ((await readFile(path, "utf8")) === serialized) {
         return {
@@ -792,6 +929,16 @@ export async function run({
   }
   state.updatedAt = iso(now);
   await writeState(statePath, state);
+  if (writeDataFiles && report.complete) {
+    const snapshot = buildSnapshot(state, { now });
+    await writePortfolioFiles({
+      state,
+      snapshot,
+      settingsPath,
+      sourcesPath,
+      outputPath,
+    });
+  }
   return {
     ...report,
     warnings: [...new Set(report.warnings)].sort(),
@@ -830,7 +977,12 @@ if (
       .endsWith("scripts/portfolio/sync.mjs"))
 ) {
   const parsed = parseArgs(process.argv.slice(2));
-  run(parsed)
+  run({
+    ...parsed.options,
+    command: parsed.command,
+    target: parsed.target,
+    writeDataFiles: true,
+  })
     .then(result => {
       process.stdout.write(`${JSON.stringify(result)}\n`);
       if (result.complete === false) process.exitCode = 1;

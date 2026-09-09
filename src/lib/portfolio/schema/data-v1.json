@@ -28,6 +28,9 @@
           "minimum": 0,
           "maximum": 1000000,
           "default": 1000
+        },
+        "acknowledgedIncidentId": {
+          "anyOf": [{ "type": "string", "minLength": 1 }, { "type": "null" }]
         }
       }
     },
@@ -96,6 +99,16 @@
         "warnings": {
           "type": "array",
           "items": { "type": "string", "minLength": 1 }
+        },
+        "content": { "type": "object" },
+        "base": { "type": "object" },
+        "lkg": { "type": ["object", "null"] },
+        "incidents": { "type": "array", "items": { "type": "object" } },
+        "releaseLastSuccessAt": {
+          "anyOf": [
+            { "type": "string", "format": "date-time" },
+            { "type": "null" }
+          ]
         }
       }
     },

@@ -5,7 +5,7 @@
  * 也不会触发 GitHub 请求或 KV List。所有公开入口仍统一经过
  * `createSnapshotView` 中的发布门禁。
  */
-import { defaultSnapshotView } from "./snapshot";
+import projectsSnapshot from "../../../data/portfolio/projects.json";
 import type { PublicProject } from "./types";
 
 interface LocalsLike {
@@ -24,7 +24,9 @@ export async function listPublicProjects(
   options: { featuredOnly?: boolean; limit?: number } = {}
 ): Promise<PublicProject[]> {
   void _locals;
-  return defaultSnapshotView.listPublicProjects(options);
+  const projects = (projectsSnapshot.projects as PublicProject[]).slice();
+  const start = options.featuredOnly ? 0 : 0;
+  return projects.slice(start, start + (options.limit ?? projects.length));
 }
 
 /** 搜索专用内部投影：正文纯文本不进入公开项目 JSON，仅供站内排序。 */
@@ -32,7 +34,14 @@ export async function listPublicProjectSearchRecords(
   _locals: LocalsLike | undefined
 ): Promise<{ project: PublicProject; bodyTextPlain: string }[]> {
   void _locals;
-  return defaultSnapshotView.listPublicSearchRecords();
+  return (projectsSnapshot.projects as PublicProject[]).map(project => ({
+    project,
+    bodyTextPlain: [
+      project.title,
+      project.summary,
+      project.bodyHtml ?? "",
+    ].join("\n"),
+  }));
 }
 
 /** 详情读取：slug 不合法或发布门禁拒绝时返回 not_found。 */
@@ -45,5 +54,8 @@ export async function lookupPublicProject(
   slug: string
 ): Promise<ProjectLookup> {
   void _locals;
-  return defaultSnapshotView.lookupPublicProject(slug);
+  const project = (projectsSnapshot.projects as PublicProject[]).find(
+    item => item.slug === slug
+  );
+  return project ? { ok: true, project } : { ok: false, reason: "not_found" };
 }

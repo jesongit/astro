@@ -5,6 +5,11 @@
 > 任何 ID、audience、邮箱或部署 ID 都以目标环境实际值为准,禁止凭猜测填写。
 > 本次代码交付不执行 Cloudflare 资源创建、修改、停用或删除。
 
+> 集成分支的生产代码路径是 GitHub JSON → GitHub Actions → Astro/Pages：
+> Admin 通过 Contents API 保存 `settings.json`，Actions 生成 `sources.json` 与
+> `projects.json`，公开页只读取 `projects.json`。下文旧 KV/Worker 配置仅作为
+> 账号侧退役清单保留，不能作为新同步链路的实施步骤。
+
 ## 1. 已知部署形态(只读记录)
 
 现有站点为 **Cloudflare Pages**(Git 集成,推 main 自动构建):
@@ -90,23 +95,19 @@ CONTROL 与 CACHE/JOBS 写权限隔离由代码保证(同步 Worker 无 CONTROL 
 `workflow_dispatch`;没有 `push`/`repository_dispatch` 触发器。这样生成数据或
 构建产生的提交不会再次触发自己,也不会与 Pages 的 Git 集成形成双重生产部署。
 
-### 7.1 与现有 Worker 的边界
+### 7.1 Actions 数据链路
 
-- 每小时 GitHub 触发默认为 `build`,因为 `portfolio-sync` 已经拥有每分钟
-  scheduled tick,并在 Worker 内按每小时内容节奏生成数据。GitHub 不再排队第二个
-  full job。
-- 手动 `full`/`repo` 使用当前 JOBS 协议写入 `v1:request:<uuid>`,等待 Worker
-  写入 `v1:result:<uuid>:<runId>` 且状态为 `succeeded` 后,才进入 `pnpm run build`。
-  `partial`、`failed`、`expired`、`interrupted` 都会阻止构建发布。
-- 该入口只写 JOBS,不调用受保护管理 API,不写 CONTROL,不新增 Worker HTTP
-  同步端点;GitHub PAT 仍只保留在 Sync Worker secret 中。
+- 每小时 `schedule` 执行 `full`；手动 `workflow_dispatch` 支持 `full`、`repo`、`build`。
+- `full`/`repo` 调用 GitHub API，生成 `sources.json` 和 `projects.json`，无变化时不提交。
+- `build` 只读取 `settings.json` + `sources.json` 重建 `projects.json`；Admin 保存设置后触发该模式。
+- Actions run 的状态是同步状态来源；失败、取消和超时均不得标记为成功。
 
 运行所需的 Actions 配置如下(只记录名称,不把值写入仓库):
 
 | 名称 | 类型 | 用途 |
 | --- | --- | --- |
 | `CLOUDFLARE_ACCOUNT_ID` | Repository variable | Wrangler 目标账号 |
-| `CLOUDFLARE_KV_API_TOKEN` | Repository secret | 仅 JOBS KV 读写 |
+| `PORTFOLIO_GITHUB_TOKEN` | Repository secret | GitHub 公开仓库读取与数据提交 |
 | `CLOUDFLARE_PAGES_API_TOKEN` | Repository secret | 仅在 Actions 成为 Pages 所有者时部署 |
 | `PORTFOLIO_PAGES_PROJECT` | Repository variable | 默认 `astro` |
 | `PORTFOLIO_PAGES_DEPLOY_OWNER` | Repository variable | 默认不部署;切换为 `github-actions` 前必须完成账号侧唯一所有者核对 |

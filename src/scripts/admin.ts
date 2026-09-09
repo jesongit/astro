@@ -481,7 +481,7 @@ function renderRepo(repo: AdminRepo): HTMLElement {
       <label><input type="checkbox" data-act="featured" ${draft.featured ? "checked" : ""} ${isSaving || state.bulkSaving ? "disabled" : ""}/> 精选</label>
       <label>排序 <input type="number" data-act="order" value="${escapeHtml(draft.order)}" min="${ORDER_MIN}" max="${ORDER_MAX}" step="1" class="w-24 border border-border bg-background px-2 py-1" ${isSaving || state.bulkSaving ? "disabled" : ""}/></label>
       <button type="button" data-act="save" class="btn-line" title="保存展示、精选和排序设置" ${isSaving || state.bulkSaving || !dirty ? "disabled" : ""}>保存设置</button>
-      <button type="button" data-act="sync" class="btn-line" ${isSaving || isSyncing || state.bulkSaving ? "disabled" : ""}>同步此仓库</button>
+      <button type="button" data-act="sync" class="btn-line" ${isSaving || isSyncing || state.bulkSaving ? "disabled" : ""}>同步</button>
       <span data-role="dirty" class="text-xs ${dirty ? "text-accent" : "text-foreground/60"}" aria-live="polite">${dirty ? "未保存修改" : "已保存"}</span>
       <span data-role="status" class="text-xs text-foreground/60" aria-live="polite">${dirty ? "请保存草稿" : ""}</span>
       <span data-role="sync-status" class="text-xs text-foreground/60" aria-live="polite">${isSyncing ? "同步任务:执行中" : ""}</span>

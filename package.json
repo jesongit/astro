@@ -20,7 +20,6 @@
     "format": "prettier --write .",
     "check:artifact": "node ./scripts/check-artifact.mjs",
     "check:routes": "node ./scripts/check-routes.mjs",
-    "portfolio:workflow": "node ./scripts/portfolio-workflow.mjs",
     "workflow:dispatch": "node ./scripts/dispatch-portfolio-workflow.mjs",
     "verify:all": "node ./scripts/verify-all.mjs",
     "deploy:site:preview": "wrangler pages deploy dist --branch preview",

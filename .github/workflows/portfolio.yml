@@ -1,14 +1,11 @@
 name: Portfolio
 
-# The Cloudflare Sync Worker owns data generation.  This workflow only queues
-# an explicit manual sync and builds the site after that sync has completed.
-# There is intentionally no push trigger: production Pages is currently owned
-# by its Git integration, and a generated-data commit must never re-enter this
-# workflow.
+# GitHub Actions owns portfolio synchronization, snapshot generation, and the
+# site build. Generated-data commits must not trigger this workflow again.
 
 on:
   schedule:
-    # UTC: run the hourly build without enqueueing a second Worker sync.
+    # UTC: synchronize public repositories once per hour.
     - cron: "0 * * * *"
   workflow_dispatch:
     inputs:
@@ -58,7 +55,7 @@ jobs:
           WORKFLOW_EVENT: ${{ github.event_name }}
           REQUESTED_MODE: ${{ inputs.mode || '' }}
           REQUESTED_REPO_ID: ${{ inputs.repo_id || '' }}
-        run: node scripts/portfolio-workflow.mjs resolve
+        run: node scripts/portfolio/resolve.mjs
 
   sync:
     name: Generate portfolio data
@@ -67,7 +64,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     permissions:
-      contents: read
+      contents: write
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -86,17 +83,32 @@ jobs:
       - name: Install dependencies (frozen lockfile)
         run: pnpm install --frozen-lockfile
 
-      - name: Queue and wait for the existing Sync Worker
+      - name: Synchronize GitHub data and build projects snapshot
         env:
-          # This token is used only for the JOBS KV namespace.  It is not a
-          # GitHub token and is never passed to the site or the Sync Worker.
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_KV_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+          GITHUB_TOKEN: ${{ secrets.PORTFOLIO_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
+          GITHUB_OWNER: jesongit
+          GITHUB_OWNER_TYPE: user
           PORTFOLIO_MODE: ${{ needs.resolve.outputs.mode }}
           PORTFOLIO_REPO_ID: ${{ needs.resolve.outputs.repo_id }}
-          PORTFOLIO_WRANGLER_ENV: production
-          PORTFOLIO_SYNC_TIMEOUT_SECONDS: 900
-        run: node scripts/portfolio-workflow.mjs sync
+          PORTFOLIO_WRITE_DATA: "true"
+        run: >-
+          pnpm run portfolio:sync --
+          ${{ needs.resolve.outputs.mode }}
+          ${{ needs.resolve.outputs.mode == 'repo' && needs.resolve.outputs.repo_id || '' }}
+          --state .cache/portfolio-state.json
+          --output data/portfolio/projects.json
+
+      - name: Commit changed portfolio data
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/portfolio/settings.json data/portfolio/sources.json data/portfolio/projects.json
+          if git diff --cached --quiet; then
+            echo "No portfolio data changes"
+          else
+            git commit -m "chore(portfolio): sync projects"
+            git push
+          fi
 
   build:
     name: Build portfolio site
@@ -108,10 +120,12 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     permissions:
-      contents: read
+      contents: write
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
 
       - name: Install pnpm
         uses: pnpm/action-setup@v4
@@ -127,7 +141,30 @@ jobs:
       - name: Install dependencies (frozen lockfile)
         run: pnpm install --frozen-lockfile
 
-      - name: Build site (after data generation, when requested)
+      - name: Rebuild public snapshot from settings and sources
+        if: needs.resolve.outputs.mode == 'build'
+        env:
+          GITHUB_OWNER: jesongit
+          GITHUB_OWNER_TYPE: user
+        run: >-
+          pnpm run portfolio:sync -- build
+          --state .cache/portfolio-state.json
+          --output data/portfolio/projects.json
+
+      - name: Commit build-only snapshot changes
+        if: needs.resolve.outputs.mode == 'build'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/portfolio/projects.json
+          if git diff --cached --quiet; then
+            echo "No public snapshot changes"
+          else
+            git commit -m "chore(portfolio): rebuild public snapshot"
+            git push
+          fi
+
+      - name: Build site from the checked-in snapshot
         run: pnpm run build
 
       - name: Check generated artifact

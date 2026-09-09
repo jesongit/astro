@@ -91,9 +91,12 @@ describe("batch admin settings route", () => {
 
     expect(response.status).toBe(200);
     expect((await response.json()).committed).toBe(true);
-    expect(fetchImpl).toHaveBeenCalledTimes(3);
+    expect(fetchImpl).toHaveBeenCalledTimes(4);
     expect(
       fetchImpl.mock.calls.filter(([, init]) => init?.method === "PUT")
+    ).toHaveLength(1);
+    expect(
+      fetchImpl.mock.calls.filter(([, init]) => init?.method === "POST")
     ).toHaveLength(1);
   });
 

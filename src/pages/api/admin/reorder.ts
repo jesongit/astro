@@ -88,8 +88,10 @@ export const POST: APIRoute = async context => {
     normalized.push({ repoId, revision, order });
   }
 
-  const inventory = await runtime.cache.getLatestInventory();
-  if (inventory) {
+  const inventory = runtime.cache
+    ? await runtime.cache.getLatestInventory()
+    : null;
+  if (inventory && !runtime.github) {
     const knownRepoIds = new Set(inventory.repos.map(repo => repo.repoId));
     const unknownRepo = normalized.find(item => !knownRepoIds.has(item.repoId));
     if (unknownRepo) {

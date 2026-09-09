@@ -1,8 +1,8 @@
 # Portfolio Actions synchronizer
 
-This directory contains a small Node-only synchronizer for a future GitHub
-Actions job. It does not deploy, write Cloudflare KV, or change display
-settings.
+This directory contains the Node-only synchronizer used by the GitHub Actions
+workflow. It writes the checked-in GitHub data files and does not use
+Cloudflare KV or change display settings.
 
 ```bash
 node scripts/portfolio/sync.mjs full \
@@ -13,7 +13,7 @@ node scripts/portfolio/sync.mjs repo 123456 \
 
 node scripts/portfolio/sync.mjs build \
   --state .cache/portfolio-state.json \
-  --output src/data/portfolio/snapshot.json
+  --output data/portfolio/projects.json
 ```
 
 `GITHUB_TOKEN` is read only from the process environment and is never written
@@ -26,7 +26,8 @@ limit.
 
 `full` follows all repository pages and updates the complete inventory before
 syncing repositories. If enumeration is interrupted, the previous inventory
-is retained and `build` refuses to replace the snapshot. `repo` accepts a
-numeric GitHub repository ID or an `owner/name`; it preserves the numeric ID
-across a rename. `build` applies the v1 publication gate and emits only
-`PublicProject` records in stable order.
+is retained and no checked-in data is changed. `repo` accepts a numeric GitHub
+repository ID or an `owner/name`; it preserves the numeric ID across a rename.
+`build` reads only `settings.json` and `sources.json`, applies the v1
+publication gate, and emits only `PublicProject` records in stable order.
+Equivalent output is not rewritten, so Actions can skip the commit.

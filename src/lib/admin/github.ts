@@ -8,7 +8,7 @@
 
 export const DEFAULT_SETTINGS_PATH = "data/portfolio/settings.json";
 export const DEFAULT_BRANCH = "main";
-export const DEFAULT_WORKFLOW = "portfolio-sync.yml";
+export const DEFAULT_WORKFLOW = "portfolio.yml";
 export const DEFAULT_API_VERSION = "2022-11-28";
 
 const GITHUB_API = "https://api.github.com";
@@ -37,12 +37,14 @@ export interface GitHubSettingsEntry {
 export interface GitHubSettingsFile {
   version: 1;
   repos: Record<string, GitHubSettingsEntry>;
+  format?: "legacy" | "canonical";
 }
 
 export interface SettingsSnapshot {
   sha: string | null;
   version: 1;
   repos: Record<string, GitHubSettingsEntry>;
+  format?: "legacy" | "canonical";
 }
 
 export interface SettingsPatch {
@@ -59,7 +61,7 @@ export interface SettingsSaveResult {
 }
 
 export interface ActionsScope {
-  kind: "all" | "repo";
+  kind: "all" | "repo" | "build";
   repoId?: string;
 }
 
@@ -304,6 +306,21 @@ export function parseSettingsFile(raw: string): GitHubSettingsFile {
     throw new SettingsFileError();
   }
   const record = parsed as Record<string, unknown>;
+  const repos: Record<string, GitHubSettingsEntry> = {};
+  if (record.schemaVersion === 1 && Array.isArray(record.settings)) {
+    for (const value of record.settings) {
+      if (typeof value !== "object" || value === null || Array.isArray(value))
+        throw new SettingsFileError();
+      const entry = value as Record<string, unknown>;
+      const repoId = typeof entry.repoId === "string" ? entry.repoId : "";
+      if (!SAFE_REPO_ID.test(repoId) || repos[repoId])
+        throw new SettingsFileError();
+      const { repoId: _repoId, ...settings } = entry;
+      void _repoId;
+      repos[repoId] = parseSettingsEntry(settings);
+    }
+    return { version: 1, repos, format: "canonical" };
+  }
   if (
     record.version !== 1 ||
     typeof record.repos !== "object" ||
@@ -312,12 +329,11 @@ export function parseSettingsFile(raw: string): GitHubSettingsFile {
   ) {
     throw new SettingsFileError();
   }
-  const repos: Record<string, GitHubSettingsEntry> = {};
   for (const [repoId, value] of Object.entries(record.repos)) {
     if (!SAFE_REPO_ID.test(repoId)) throw new SettingsFileError();
     repos[repoId] = parseSettingsEntry(value);
   }
-  return { version: 1, repos };
+  return { version: 1, repos, format: "legacy" };
 }
 
 export function serializeSettingsFile(snapshot: SettingsSnapshot): string {
@@ -327,7 +343,18 @@ export function serializeSettingsFile(snapshot: SettingsSnapshot): string {
   )) {
     repos[repoId] = cloneEntry(snapshot.repos[repoId]!);
   }
-  const text = `${JSON.stringify({ version: 1, repos }, null, 2)}\n`;
+  const value =
+    snapshot.format === "canonical"
+      ? {
+          $schema: "../../src/lib/portfolio/schema/data-v1.json",
+          schemaVersion: 1,
+          settings: Object.entries(repos).map(([repoId, entry]) => ({
+            repoId,
+            ...entry,
+          })),
+        }
+      : { version: 1, repos };
+  const text = `${JSON.stringify(value, null, 2)}\n`;
   if (new TextEncoder().encode(text).byteLength > MAX_SETTINGS_BYTES) {
     throw new SettingsFileError("GitHub 设置文件超过大小上限。");
   }
@@ -518,7 +545,10 @@ export class GitHubAdminClient {
       throw new GitHubAdminError(503, "read", "GitHub 暂时不可用。");
     }
     if (response.status === 404) {
-      return { sha: null, file: { version: 1, repos: {} } };
+      return {
+        sha: null,
+        file: { version: 1, repos: {}, format: "canonical" },
+      };
     }
     if (!response.ok) {
       const status = response.status;
@@ -562,7 +592,12 @@ export class GitHubAdminClient {
 
   async getSettings(): Promise<SettingsSnapshot> {
     const result = await this.readSettingsFile();
-    return { sha: result.sha, version: 1, repos: result.file.repos };
+    return {
+      sha: result.sha,
+      version: 1,
+      repos: result.file.repos,
+      format: result.file.format,
+    };
   }
 
   async saveSettings(
@@ -591,6 +626,7 @@ export class GitHubAdminClient {
           cloneEntry(entry),
         ])
       ),
+      format: current.format,
     };
     const changedRepoIds: string[] = [];
     const unchangedRepoIds: string[] = [];
@@ -653,8 +689,10 @@ export class GitHubAdminClient {
     const createdAt = new Date().toISOString();
     const dispatchId = crypto.randomUUID();
     const path = `${this.repoPrefix()}/actions/workflows/${pathPart(this.config.workflow)}/dispatches`;
-    const inputs: Record<string, string> = { scope: scope.kind };
-    if (scope.kind === "repo" && scope.repoId) inputs.repoId = scope.repoId;
+    const inputs: Record<string, string> = {
+      mode: scope.kind === "all" ? "full" : scope.kind,
+    };
+    if (scope.kind === "repo" && scope.repoId) inputs.repo_id = scope.repoId;
     await this.request(
       path,
       {

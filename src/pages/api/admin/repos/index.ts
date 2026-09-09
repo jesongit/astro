@@ -9,6 +9,7 @@ import {
 } from "@/lib/admin/api";
 import type { SourceObservation } from "@/lib/portfolio/types";
 import { settingsEntry, settingsRevision } from "@/lib/admin/settings";
+import sourcesSnapshot from "../../../../../data/portfolio/sources.json";
 
 export const prerender = false;
 
@@ -41,6 +42,14 @@ export const GET: APIRoute = async context => {
   const q = (url.searchParams.get("q") ?? "").trim().toLowerCase();
   const status = url.searchParams.get("status") ?? "all";
   const start = Number(url.searchParams.get("cursor") ?? 0) || 0;
+
+  // GitHub files are authoritative in the new deployment. The checked-in
+  // sources snapshot already contains the complete paginated candidate list;
+  // the admin request must not re-enumerate GitHub or read KV.
+  if (runtime.github) {
+    return listFromCheckedInSources(runtime, q, status, start);
+  }
+  if (!runtime.cache) return notConfigured();
 
   const inventory = await runtime.cache.getLatestInventory();
   if (!inventory) {
@@ -121,3 +130,96 @@ export const GET: APIRoute = async context => {
     settingsSha: settingsSnapshot.sha,
   });
 };
+
+async function listFromCheckedInSources(
+  runtime: NonNullable<ReturnType<typeof adminRuntime>>,
+  q: string,
+  status: string,
+  start: number
+): Promise<Response> {
+  const backend = adminSettings(runtime);
+  if (!backend) {
+    return jsonError(503, "settings_unconfigured", "GitHub 设置存储未配置。");
+  }
+  try {
+    const snapshot = await backend.read();
+    const sources = Array.isArray(sourcesSnapshot.sources)
+      ? (sourcesSnapshot.sources as Array<Record<string, unknown>>)
+      : [];
+    let all: RepoSummary[] = sources.flatMap(source => {
+      const repoId = typeof source.repoId === "string" ? source.repoId : "";
+      const fullName =
+        typeof source.fullName === "string" ? source.fullName : "";
+      if (!/^\d{1,12}$/.test(repoId) || !fullName) return [];
+      const setting = settingsEntry(snapshot, repoId);
+      return [
+        {
+          repoId,
+          fullName,
+          visible: setting?.visible ?? false,
+          featured: setting?.featured ?? false,
+          order: setting?.order ?? null,
+          mode: typeof source.mode === "string" ? source.mode : "basic",
+          configState:
+            typeof source.configState === "string"
+              ? source.configState
+              : "absent",
+          releaseState:
+            typeof source.releaseState === "string"
+              ? source.releaseState
+              : "none",
+          eligibility:
+            typeof source.eligibility === "string"
+              ? source.eligibility
+              : "unknown",
+          lastPublicVerifiedAt:
+            typeof source.lastPublicVerifiedAt === "string"
+              ? source.lastPublicVerifiedAt
+              : null,
+          lastContentSuccessAt:
+            typeof source.lastContentSuccessAt === "string"
+              ? source.lastContentSuccessAt
+              : null,
+          warnings: Array.isArray(source.warnings)
+            ? (source.warnings.filter(
+                item => typeof item === "string"
+              ) as string[])
+            : [],
+          revision: settingsRevision(snapshot, repoId),
+        },
+      ];
+    });
+    all.sort((a, b) =>
+      a.repoId.localeCompare(b.repoId, undefined, { numeric: true })
+    );
+    if (q)
+      all = all.filter(
+        item => item.fullName.toLowerCase().includes(q) || item.repoId === q
+      );
+    if (status === "visible") all = all.filter(item => item.visible);
+    if (status === "hidden") all = all.filter(item => !item.visible);
+    if (status === "featured") all = all.filter(item => item.featured);
+    if (status === "enhanced")
+      all = all.filter(item => item.mode === "enhanced");
+    if (status === "config_error")
+      all = all.filter(item => item.configState === "invalid");
+    if (status === "sync_error")
+      all = all.filter(
+        item =>
+          item.eligibility === "unknown" ||
+          item.releaseState === "error" ||
+          item.warnings.length > 0
+      );
+    const page = all.slice(start, start + 100);
+    return jsonOk({
+      repos: page,
+      cursor: start + 100 < all.length ? String(start + 100) : null,
+      inventoryComplete: true,
+      inventoryObservedAt: null,
+      settingsSource: snapshot.source,
+      settingsSha: snapshot.sha,
+    });
+  } catch (error) {
+    return adminIntegrationError(error);
+  }
+}

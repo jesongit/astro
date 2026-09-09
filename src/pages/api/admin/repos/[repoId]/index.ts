@@ -40,8 +40,12 @@ export const GET: APIRoute = async context => {
         revision: settingsRevision(settingsSnapshot, repoId),
       }
     : null;
-  const observation = await runtime.cache.getLatestObservation(repoId);
-  const incidents: Incident[] = await runtime.cache.getIncidents(repoId);
+  const observation = runtime.cache
+    ? await runtime.cache.getLatestObservation(repoId)
+    : null;
+  const incidents: Incident[] = runtime.cache
+    ? await runtime.cache.getIncidents(repoId)
+    : [];
   const latestIncident = incidents.length
     ? incidents.reduce((a, b) =>
         Date.parse(a.observedAt) >= Date.parse(b.observedAt) ? a : b

@@ -199,7 +199,7 @@ describe("GitHub admin settings integration", () => {
     const dispatchBody = JSON.parse(String(fetchImpl.mock.calls[0]![1]?.body));
     expect(dispatchBody).toEqual({
       ref: "main",
-      inputs: { scope: "repo", repoId: "101" },
+      inputs: { mode: "repo", repo_id: "101" },
     });
   });
 });

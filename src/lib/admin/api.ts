@@ -103,30 +103,31 @@ export async function readJsonBody(
 }
 
 export interface AdminRuntime {
-  /** Deprecated KV compatibility boundary; never selected when GitHub is set. */
+  /** Optional legacy read/write adapters retained only for old deployments. */
   control: ControlStore | null;
-  cache: PublicCacheStore;
-  jobs: JobsStore;
+  cache: PublicCacheStore | null;
+  jobs: JobsStore | null;
   github: GitHubAdminClient | null;
 }
 
-/** 从 locals.runtime.env 构造只读/受限存储;缺失时返回 null(调用方 503) */
+/** 从 locals.runtime.env 构造 GitHub 优先的管理运行时。 */
 export function adminRuntime(locals: App.Locals): AdminRuntime | null {
   const env = (locals.runtime?.env ?? {}) as Record<string, unknown>;
   const control = env.PORTFOLIO_CONTROL as PortfolioKV | undefined;
   const cache = env.PORTFOLIO_CACHE as PortfolioKV | undefined;
   const jobs = env.PORTFOLIO_JOBS as PortfolioKV | undefined;
-  if (!cache || !jobs) return null;
   const validControl =
     control && typeof control.get === "function"
       ? new ControlStore(control)
       : null;
   const githubConfig = getGitHubAdminConfig(env);
+  const github = githubConfig ? new GitHubAdminClient(githubConfig) : null;
+  if (!github && (!cache || !jobs)) return null;
   return {
     control: validControl,
-    cache: new PublicCacheStore(cache),
-    jobs: new JobsStore(jobs),
-    github: githubConfig ? new GitHubAdminClient(githubConfig) : null,
+    cache: cache ? new PublicCacheStore(cache) : null,
+    jobs: jobs ? new JobsStore(jobs) : null,
+    github,
   };
 }
 
@@ -173,4 +174,4 @@ export function adminIntegrationError(error: unknown): Response {
 }
 
 export const notConfigured = (): Response =>
-  jsonError(503, "bindings_missing", "KV 绑定不可用,暂不能管理作品。");
+  jsonError(503, "admin_unconfigured", "GitHub 管理服务尚未配置。");

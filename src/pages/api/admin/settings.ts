@@ -91,7 +91,9 @@ export const POST: APIRoute = async context => {
   for (const [repoId, entry] of Object.entries(patch)) {
     if (entry.visible !== true || entry.acknowledgedIncidentId !== undefined)
       continue;
-    const incidents = await runtime.cache.getIncidents(repoId);
+    const incidents = runtime.cache
+      ? await runtime.cache.getIncidents(repoId)
+      : [];
     if (incidents.length === 0) continue;
     const latest = incidents.reduce((a, b) =>
       Date.parse(a.observedAt) >= Date.parse(b.observedAt) ? a : b
@@ -122,11 +124,25 @@ export const POST: APIRoute = async context => {
       expectedResult.value,
       identity.email
     );
+    let publishState = "not_dispatched";
+    let publishJobId: string | null = null;
+    if (saved.committed && runtime.github) {
+      try {
+        const dispatched = await runtime.github.dispatchWorkflow({
+          kind: "build",
+        });
+        publishState = "dispatched";
+        publishJobId = dispatched.dispatchId;
+      } catch {
+        publishState = "dispatch_failed";
+      }
+    }
     return jsonOk({
       source: saved.source,
       committed: saved.committed,
       saveState: saved.committed ? "saved" : "unchanged",
-      publishState: "not_dispatched",
+      publishState,
+      publishJobId,
       dirty: Object.keys(patch).length > 0,
       changedRepoIds: saved.changedRepoIds,
       unchangedRepoIds: saved.unchangedRepoIds,

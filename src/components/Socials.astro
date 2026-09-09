@@ -16,4 +16,13 @@ import LinkButton from "./LinkButton.astro";
       </LinkButton>
     ))
   }
+  <LinkButton
+    href="/admin/"
+    class="p-2 hover:rotate-6 sm:p-1"
+    title="管理"
+    aria-label="管理"
+  >
+    <span aria-hidden="true" class="inline-block text-xl leading-6">⚙</span>
+    <span class="sr-only">管理</span>
+  </LinkButton>
 </div>

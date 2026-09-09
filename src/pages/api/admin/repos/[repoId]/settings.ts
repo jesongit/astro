@@ -119,7 +119,9 @@ export const PATCH: APIRoute = async context => {
 
   // 恢复展示必须显式确认最新 incident(由服务端按当前事件生成,§8.4)
   if (body.visible === true && body.acknowledgedIncidentId === undefined) {
-    const incidents = await runtime.cache.getIncidents(repoId);
+    const incidents = runtime.cache
+      ? await runtime.cache.getIncidents(repoId)
+      : [];
     if (incidents.length > 0) {
       const latest = incidents.reduce((a, b) =>
         Date.parse(a.observedAt) >= Date.parse(b.observedAt) ? a : b
@@ -152,6 +154,19 @@ export const PATCH: APIRoute = async context => {
       revision,
       identity.email
     );
+    let publishState = "not_dispatched";
+    let publishJobId: string | null = null;
+    if (saved.committed && runtime.github) {
+      try {
+        const dispatched = await runtime.github.dispatchWorkflow({
+          kind: "build",
+        });
+        publishState = "dispatched";
+        publishJobId = dispatched.dispatchId;
+      } catch {
+        publishState = "dispatch_failed";
+      }
+    }
     const entry = saved.settings[repoId] ?? {
       visible: false,
       featured: false,
@@ -162,7 +177,8 @@ export const PATCH: APIRoute = async context => {
       source: saved.source,
       committed: saved.committed,
       saveState: saved.committed ? "saved" : "unchanged",
-      publishState: "not_dispatched",
+      publishState,
+      publishJobId,
       changedRepoIds: saved.changedRepoIds,
       settings: {
         ...entry,

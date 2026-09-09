@@ -8,6 +8,20 @@
       "featured": true,
       "order": 1,
       "acknowledgedIncidentId": null
+    },
+    {
+      "repoId": "1349208725",
+      "visible": true,
+      "featured": true,
+      "order": 3,
+      "acknowledgedIncidentId": null
+    },
+    {
+      "repoId": "1358783702",
+      "visible": true,
+      "featured": true,
+      "order": 2,
+      "acknowledgedIncidentId": null
     }
   ]
 }

@@ -18,6 +18,7 @@ import {
   GitHubClient,
   GitHubCredentialError,
   GitHubRateLimitError,
+  GitHubUpstreamError,
 } from "./github.mjs";
 import {
   decodeBase64,
@@ -361,7 +362,17 @@ async function resolveRepository({ client, state, target, knownEntry }) {
   }
 
   for (const fullName of candidates) {
-    const result = await client.getRepository(fullName);
+    let result;
+    try {
+      result = await client.getRepository(fullName);
+    } catch (error) {
+      // A single repository can be unavailable upstream (for example, GitHub
+      // may return 451). Keep the inventory run usable and let the caller
+      // persist an identity-unresolved record for this repository.
+      if (isCredentialOrRate(error)) throw error;
+      if (error instanceof GitHubUpstreamError) continue;
+      throw error;
+    }
     if (result.status !== 200 || !result.repository) continue;
     if (targetId && String(result.repository.id) !== targetId) continue;
     return { fullName, repository: result.repository };
@@ -372,9 +383,14 @@ async function resolveRepository({ client, state, target, knownEntry }) {
     const repositories = await client.listRepositories();
     const found = repositories.find(item => String(item.id) === targetId);
     if (found) {
-      const result = await client.getRepository(found.full_name);
-      if (result.status === 200 && result.repository) {
-        return { fullName: found.full_name, repository: result.repository };
+      try {
+        const result = await client.getRepository(found.full_name);
+        if (result.status === 200 && result.repository) {
+          return { fullName: found.full_name, repository: result.repository };
+        }
+      } catch (error) {
+        if (isCredentialOrRate(error)) throw error;
+        if (!(error instanceof GitHubUpstreamError)) throw error;
       }
     }
   }

@@ -65,7 +65,11 @@ const release = {
   body: "## Notes\n\nPublished.",
 };
 
-const makeRepoFetch = ({ listFailure = false, withEtags = false } = {}) => {
+const makeRepoFetch = ({
+  listFailure = false,
+  withEtags = false,
+  repositoryFailureStatus = null,
+} = {}) => {
   const calls: { url: string; init?: RequestInit }[] = [];
   const fetchImpl = async (url: string, init?: RequestInit) => {
     calls.push({ url, init });
@@ -98,6 +102,8 @@ const makeRepoFetch = ({ listFailure = false, withEtags = false } = {}) => {
       return jsonResponse([]);
     }
     if (pathname === `/repos/${REPO}`) {
+      if (repositoryFailureStatus)
+        return new Response("upstream", { status: repositoryFailureStatus });
       return conditional
         ? new Response(null, { status: 304 })
         : jsonResponse(repository);
@@ -320,6 +326,29 @@ describe("portfolio Actions sync", () => {
         { now: NOW }
       )
     ).toThrow("inventory_incomplete");
+  });
+
+  it("keeps a full run usable when one repository is unavailable upstream", async () => {
+    const paths = await temporaryState();
+    const result = await run({
+      command: "full",
+      statePath: paths.statePath,
+      outputPath: paths.outputPath,
+      fetchImpl: makeRepoFetch({ repositoryFailureStatus: 451 }).fetchImpl,
+      now: NOW,
+    });
+
+    expect(result.complete).toBe(true);
+    expect(result.processed).toBe(1);
+    expect(result.warnings).toContain("identity_unresolved");
+    const loaded = await readState(paths.statePath, {
+      owner: "jesongit",
+      ownerType: "user",
+    });
+    expect(loaded.state.inventory?.completed).toBe(true);
+    expect(loaded.state.records[String(REPO_ID)]?.eligibility).toBe(
+      "unknown"
+    );
   });
 
   it("keeps stable JSON ordering for equivalent state objects", () => {

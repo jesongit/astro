@@ -202,6 +202,52 @@ describe("GitHub admin settings integration", () => {
       inputs: { mode: "repo", repo_id: "101" },
     });
   });
+
+  it("does not misclassify a permission 403 as rate limiting", async () => {
+    const fetchImpl = vi.fn<typeof fetch>().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          message: "Resource not accessible by personal access token",
+        }),
+        {
+          status: 403,
+          headers: {
+            "Content-Type": "application/json",
+            "X-RateLimit-Remaining": "4999",
+          },
+        }
+      )
+    );
+    const client = new GitHubAdminClient(config, fetchImpl);
+
+    await expect(client.getSettings()).rejects.toMatchObject({
+      status: 403,
+      rateLimited: false,
+      message: "GitHub 凭据没有访问此资源的权限。",
+    });
+  });
+
+  it("recognizes GitHub secondary rate-limit responses", async () => {
+    const fetchImpl = vi.fn<typeof fetch>().mockResolvedValue(
+      new Response(
+        JSON.stringify({ message: "You have exceeded a secondary rate limit." }),
+        {
+          status: 403,
+          headers: {
+            "Content-Type": "application/json",
+            "X-RateLimit-Remaining": "4999",
+          },
+        }
+      )
+    );
+    const client = new GitHubAdminClient(config, fetchImpl);
+
+    await expect(client.getSettings()).rejects.toMatchObject({
+      status: 403,
+      rateLimited: true,
+      message: "GitHub 请求受限,请稍后重试。",
+    });
+  });
 });
 
 describe("GitHub settings format and configuration", () => {

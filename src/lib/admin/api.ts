@@ -159,6 +159,15 @@ export function adminIntegrationError(error: unknown): Response {
       return jsonError(503, "github_unconfigured", "GitHub 服务端凭据不可用。");
     }
     if (error.status === 403 || error.status === 429) {
+      if (!error.rateLimited) {
+        const message =
+          error.operation === "write"
+            ? "GitHub 凭据没有修改设置文件的权限。"
+            : error.operation === "dispatch"
+              ? "GitHub 凭据没有触发 Actions 的权限。"
+              : "GitHub 凭据没有读取此资源的权限。";
+        return jsonError(503, "github_forbidden", message);
+      }
       return jsonError(
         503,
         "github_rate_limited",

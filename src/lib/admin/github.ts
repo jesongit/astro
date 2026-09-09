@@ -106,7 +106,8 @@ export class GitHubAdminError extends Error {
   constructor(
     public readonly status: number,
     public readonly operation: "read" | "write" | "dispatch" | "run",
-    message = "GitHub 请求失败。"
+    message = "GitHub 请求失败。",
+    public readonly rateLimited = false
   ) {
     super(message);
     this.name = "GitHubAdminError";
@@ -453,6 +454,55 @@ function asNullableString(value: unknown): string | null {
   return typeof value === "string" ? value : null;
 }
 
+async function upstreamErrorMessage(response: Response): Promise<string> {
+  try {
+    const value: unknown = await response.clone().json();
+    if (
+      typeof value === "object" &&
+      value !== null &&
+      !Array.isArray(value) &&
+      typeof (value as Record<string, unknown>).message === "string"
+    ) {
+      return (value as Record<string, string>).message;
+    }
+  } catch {
+    // Status and rate-limit headers are sufficient when the body is not JSON.
+  }
+  return "";
+}
+
+async function githubHttpError(
+  response: Response,
+  operation: GitHubAdminError["operation"]
+): Promise<GitHubAdminError> {
+  const status = response.status;
+  const remaining = response.headers.get("x-ratelimit-remaining");
+  const retryAfter = response.headers.get("retry-after");
+  const upstreamMessage =
+    status === 403 || status === 429
+      ? (await upstreamErrorMessage(response)).toLowerCase()
+      : "";
+  const rateLimited =
+    status === 429 ||
+    (status === 403 &&
+      (remaining === "0" ||
+        retryAfter !== null ||
+        /rate limit|secondary rate limit|abuse detection/.test(
+          upstreamMessage
+        )));
+  const message =
+    status === 401
+      ? "GitHub 凭据无效。"
+      : rateLimited
+        ? "GitHub 请求受限,请稍后重试。"
+        : status === 403
+          ? "GitHub 凭据没有访问此资源的权限。"
+          : status >= 500
+            ? "GitHub 暂时不可用。"
+            : "GitHub 请求失败。";
+  return new GitHubAdminError(status, operation, message, rateLimited);
+}
+
 export class GitHubAdminClient {
   private readonly fetchImpl: typeof fetch;
 
@@ -494,16 +544,7 @@ export class GitHubAdminClient {
       throw new GitHubAdminError(503, operation, "GitHub 暂时不可用。");
     }
     if (!response.ok) {
-      const status = response.status;
-      const message =
-        status === 401
-          ? "GitHub 凭据无效。"
-          : status === 403 || status === 429
-            ? "GitHub 请求受限,请稍后重试。"
-            : status >= 500
-              ? "GitHub 暂时不可用。"
-              : "GitHub 请求失败。";
-      throw new GitHubAdminError(status, operation, message);
+      throw await githubHttpError(response, operation);
     }
     return response;
   }
@@ -551,12 +592,7 @@ export class GitHubAdminClient {
       };
     }
     if (!response.ok) {
-      const status = response.status;
-      throw new GitHubAdminError(
-        status,
-        "read",
-        status === 401 ? "GitHub 凭据无效。" : "GitHub 请求失败。"
-      );
+      throw await githubHttpError(response, "read");
     }
     let payload: unknown;
     try {

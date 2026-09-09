@@ -1,0 +1,235 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://posase.im/api/portfolio/data-schema/v1.json",
+  "title": "Portfolio data files v1",
+  "oneOf": [
+    { "$ref": "#/$defs/settingsFile" },
+    { "$ref": "#/$defs/sourcesFile" },
+    { "$ref": "#/$defs/projectsFile" }
+  ],
+  "$defs": {
+    "schemaVersion": { "const": 1 },
+    "repoId": { "type": "string", "pattern": "^\\d{1,12}$" },
+    "httpsUrl": {
+      "type": "string",
+      "format": "uri",
+      "pattern": "^https://"
+    },
+    "settingsEntry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["repoId"],
+      "properties": {
+        "repoId": { "$ref": "#/$defs/repoId" },
+        "visible": { "type": "boolean", "default": false },
+        "featured": { "type": "boolean", "default": false },
+        "order": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1000000,
+          "default": 1000
+        }
+      }
+    },
+    "settingsFile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schemaVersion", "settings"],
+      "properties": {
+        "$schema": { "type": "string" },
+        "schemaVersion": { "$ref": "#/$defs/schemaVersion" },
+        "settings": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/settingsEntry" }
+        }
+      }
+    },
+    "sourceEntry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schemaVersion",
+        "repoId",
+        "nodeId",
+        "fullName",
+        "eligibility",
+        "attemptState",
+        "observedAt",
+        "lastPublicVerifiedAt",
+        "payloadHash",
+        "configState",
+        "mode",
+        "releaseState",
+        "lastContentSuccessAt",
+        "warnings"
+      ],
+      "properties": {
+        "schemaVersion": { "$ref": "#/$defs/schemaVersion" },
+        "repoId": { "$ref": "#/$defs/repoId" },
+        "nodeId": { "type": "string", "minLength": 1 },
+        "fullName": { "type": "string", "minLength": 1 },
+        "eligibility": {
+          "enum": ["public", "unavailable", "out_of_scope", "unknown"]
+        },
+        "attemptState": { "enum": ["success", "partial", "error"] },
+        "observedAt": { "type": "string", "format": "date-time" },
+        "lastPublicVerifiedAt": {
+          "anyOf": [
+            { "type": "string", "format": "date-time" },
+            { "type": "null" }
+          ]
+        },
+        "payloadHash": {
+          "anyOf": [{ "type": "string", "minLength": 1 }, { "type": "null" }]
+        },
+        "configState": {
+          "enum": ["absent", "valid", "invalid", "fetch_error"]
+        },
+        "mode": { "enum": ["basic", "enhanced"] },
+        "releaseState": { "enum": ["present", "none", "stale", "error"] },
+        "lastContentSuccessAt": {
+          "anyOf": [
+            { "type": "string", "format": "date-time" },
+            { "type": "null" }
+          ]
+        },
+        "warnings": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "sourcesFile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schemaVersion", "sources"],
+      "properties": {
+        "$schema": { "type": "string" },
+        "schemaVersion": { "$ref": "#/$defs/schemaVersion" },
+        "sources": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/sourceEntry" }
+        }
+      }
+    },
+    "image": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["src", "alt"],
+      "properties": {
+        "src": { "$ref": "#/$defs/httpsUrl" },
+        "alt": { "type": "string", "minLength": 1 },
+        "caption": { "type": "string" },
+        "width": { "type": "integer", "minimum": 1 },
+        "height": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "links": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["github"],
+      "properties": {
+        "github": { "$ref": "#/$defs/httpsUrl" },
+        "website": {
+          "anyOf": [{ "$ref": "#/$defs/httpsUrl" }, { "type": "null" }]
+        },
+        "demo": {
+          "anyOf": [{ "$ref": "#/$defs/httpsUrl" }, { "type": "null" }]
+        },
+        "docs": {
+          "anyOf": [{ "$ref": "#/$defs/httpsUrl" }, { "type": "null" }]
+        }
+      }
+    },
+    "githubFacts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["fullName", "url", "stars", "license", "language"],
+      "properties": {
+        "fullName": { "type": "string", "minLength": 1 },
+        "url": { "$ref": "#/$defs/httpsUrl" },
+        "stars": { "type": "integer", "minimum": 0 },
+        "license": { "anyOf": [{ "type": "string" }, { "type": "null" }] },
+        "language": { "anyOf": [{ "type": "string" }, { "type": "null" }] }
+      }
+    },
+    "releaseAsset": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "sizeBytes", "url", "platform"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "sizeBytes": { "type": "integer", "minimum": 0 },
+        "url": { "$ref": "#/$defs/httpsUrl" },
+        "platform": {
+          "enum": ["windows", "macos", "linux", "other", "checksum"]
+        }
+      }
+    },
+    "release": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["tagName", "publishedAt", "notes", "assets", "releaseUrl"],
+      "properties": {
+        "tagName": { "type": "string", "minLength": 1 },
+        "publishedAt": { "type": "string", "format": "date-time" },
+        "notes": { "type": "array", "items": { "type": "string" } },
+        "assets": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/releaseAsset" }
+        },
+        "releaseUrl": { "$ref": "#/$defs/httpsUrl" },
+        "sourceZipUrl": { "$ref": "#/$defs/httpsUrl" },
+        "sourceTarUrl": { "$ref": "#/$defs/httpsUrl" }
+      }
+    },
+    "project": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "slug",
+        "title",
+        "summary",
+        "topics",
+        "techStack",
+        "features",
+        "screenshots",
+        "links",
+        "github",
+        "release"
+      ],
+      "properties": {
+        "slug": { "type": "string", "pattern": "^gh-\\d{1,12}$" },
+        "title": { "type": "string", "minLength": 1 },
+        "summary": { "type": "string", "minLength": 1 },
+        "topics": { "type": "array", "items": { "type": "string" } },
+        "techStack": { "type": "array", "items": { "type": "string" } },
+        "features": { "type": "array", "items": { "type": "string" } },
+        "bodyHtml": { "type": "string" },
+        "cover": { "anyOf": [{ "$ref": "#/$defs/image" }, { "type": "null" }] },
+        "screenshots": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/image" }
+        },
+        "links": { "$ref": "#/$defs/links" },
+        "github": { "$ref": "#/$defs/githubFacts" },
+        "release": {
+          "anyOf": [{ "$ref": "#/$defs/release" }, { "type": "null" }]
+        }
+      }
+    },
+    "projectsFile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schemaVersion", "projects"],
+      "properties": {
+        "$schema": { "type": "string" },
+        "schemaVersion": { "$ref": "#/$defs/schemaVersion" },
+        "projects": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/project" }
+        }
+      }
+    }
+  }
+}

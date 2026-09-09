@@ -11,6 +11,9 @@ export const GET: APIRoute = async ({ locals }) => {
   const projects = await listPublicProjects(locals as never);
   return new Response(JSON.stringify({ projects }), {
     status: 200,
-    headers: { "Content-Type": "application/json; charset=utf-8" },
+    headers: {
+      "Content-Type": "application/json; charset=utf-8",
+      "Cache-Control": "no-store",
+    },
   });
 };

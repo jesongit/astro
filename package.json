@@ -13,11 +13,13 @@
     "test:watch": "vitest",
     "test:worker": "vitest run --config vitest.worker.config.ts",
     "test:e2e": "playwright test",
+    "typecheck": "astro check && tsc --noEmit -p workers/portfolio-sync/tsconfig.json",
     "lint": "eslint .",
     "format:check": "prettier --check .",
     "format": "prettier --write .",
     "check:artifact": "node ./scripts/check-artifact.mjs",
     "check:routes": "node ./scripts/check-routes.mjs",
+    "verify:all": "node ./scripts/verify-all.mjs",
     "deploy:site:preview": "wrangler pages deploy dist --branch preview",
     "deploy:sync:preview": "wrangler deploy --config workers/portfolio-sync/wrangler.jsonc --env preview"
   },

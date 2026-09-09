@@ -8,10 +8,15 @@
 
 ```bash
 pnpm run build              # check + 构建 + Pagefind + 索引复制
+pnpm run typecheck          # Astro + Sync Worker 类型检查
+pnpm run lint               # ESLint
+pnpm run format:check       # Prettier
 pnpm run check:artifact     # 产物安全/结构检查
 pnpm run check:routes       # SSR 路由清单检查
 pnpm run test               # 纯逻辑/协议/门禁/鉴权
 pnpm run test:worker        # Worker 集成测试
+pnpm run test:e2e           # 隔离 Wrangler 预览上的浏览器验收
+pnpm run verify:all         # 按 CI 顺序执行完整本地验收
 pnpm run preview:cloudflare # 本地 Wrangler 预览(本地 KV)
 pnpm run deploy:site:preview    # 部署站点预览环境
 pnpm run deploy:sync:preview    # 部署同步 Worker 预览环境
@@ -30,7 +35,8 @@ pnpm run deploy:sync:preview    # 部署同步 Worker 预览环境
 ### 手动触发同步
 
 管理页「全量同步」/「同步此仓库」;冷却:全量 10 分钟、单仓库 60 秒(429 + retryAt)。
-紧急情况可直接向 JOBS 写 `v1:request:<uuid>`(谨慎,结构见 §8.1)。
+任务状态以管理 API 返回的 `queued`、`running`、`succeeded`、`partial`、`failed`、
+`expired` 或 `interrupted` 为准；不要绕过管理 API 直接写 KV。
 
 ### 轮换 GitHub PAT
 
@@ -69,6 +75,12 @@ pnpm run deploy:sync:preview    # 部署同步 Worker 预览环境
 Worker 按 Retry-After / X-RateLimit-Reset 暂停至 retryAt,不删除任何数据。
 无需人工干预;频繁出现则检查 PAT 配额与候选规模。
 
+### GitHub Actions 状态
+
+v1 同步链路不读取 GitHub Actions，也没有 Actions run 状态展示。同步健康度只看
+Worker 的 `v1:run:<runId>` 和手动任务结果。不要通过创建工作流或添加 Actions token
+来“补齐”状态；如果产品新增该需求，先定义权限、缓存、失败语义和独立验收矩阵。
+
 ### 坏配置 / Release 接口故障
 
 - 坏配置:保留上一份有效增强内容(LKG),修复配置自动恢复;
@@ -86,6 +98,9 @@ Worker 按 Retry-After / X-RateLimit-Reset 暂停至 retryAt,不删除任何数�
 
 **红线**:任何回滚都不能让已删除/转私的仓库复活——墓碑(v1:incident)与
 人工隐藏设置优先于一切旧备份。
+
+旧 KV namespace、旧 Worker 或旧 Cron 的停用/删除不属于本手册的自动操作；本系统
+不读取旧格式，任何云端资源清理都必须单独审批并由有权限的操作者执行。
 
 ## 两地区传播验证(阶段 7,需操作者执行)
 

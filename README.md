@@ -23,6 +23,7 @@
 - [x] 动态 OG 图片生成
 - [x] 作品展示 + GitHub Releases 多平台下载
 - [x] Cloudflare Access 保护的独立管理页
+- [x] 同步链路不依赖项目仓库的 GitHub Actions
 
 ## 项目结构
 
@@ -51,7 +52,7 @@
 │   ├── constants.ts            # 常量
 │   └── content.config.ts       # 内容 Schema 定义
 ├── workers/
-│   └── portfolio-sync/         # 独立定时同步 Worker（Cron → GitHub → KV）
+│   └── portfolio-sync/         # 独立 scheduled Worker（GitHub → 版本化 KV 投影）
 ├── scripts/                    # 构建与产物检查脚本
 ├── tests/                      # 纯逻辑 / Worker / e2e 测试
 ├── docs/
@@ -63,18 +64,18 @@
 
 ## 技术栈
 
-| 类别       | 技术                                                                                                     |
-| ---------- | -------------------------------------------------------------------------------------------------------- |
-| 框架       | [Astro](https://astro.build/)（静态默认 + 少量按需渲染）                                                 |
-| 运行时     | [Cloudflare Pages](https://pages.cloudflare.com/) + 独立 [Workers](https://workers.cloudflare.com/) Cron |
-| 存储       | [Cloudflare Workers KV](https://developers.cloudflare.com/kv/)（CONTROL / CACHE / JOBS）                 |
-| 鉴权       | [Cloudflare Access](https://www.cloudflare.com/zero-trust/) JWT + HMAC CSRF                              |
-| 类型检查   | [TypeScript](https://www.typescriptlang.org/)                                                            |
-| 样式       | [TailwindCSS](https://tailwindcss.com/)                                                                  |
-| 静态搜索   | [Pagefind](https://pagefind.app/)                                                                        |
-| 测试       | [Vitest](https://vitest.dev/) + [Playwright](https://playwright.dev/)                                    |
-| 代码格式化 | [Prettier](https://prettier.io/)                                                                         |
-| 代码检查   | [ESLint](https://eslint.org)                                                                             |
+| 类别       | 技术                                                                                                                        |
+| ---------- | --------------------------------------------------------------------------------------------------------------------------- |
+| 框架       | [Astro](https://astro.build/)（静态默认 + 少量按需渲染）                                                                    |
+| 运行时     | [Cloudflare Pages](https://pages.cloudflare.com/) 按需渲染 + 独立 [Workers](https://workers.cloudflare.com/) scheduled 同步 |
+| 存储       | [Cloudflare Workers KV](https://developers.cloudflare.com/kv/) 的 CONTROL / CACHE / JOBS 版本化命名空间                     |
+| 鉴权       | [Cloudflare Access](https://www.cloudflare.com/zero-trust/) JWT + HMAC CSRF                                                 |
+| 类型检查   | [TypeScript](https://www.typescriptlang.org/)                                                                               |
+| 样式       | [TailwindCSS](https://tailwindcss.com/)                                                                                     |
+| 静态搜索   | [Pagefind](https://pagefind.app/)                                                                                           |
+| 测试       | [Vitest](https://vitest.dev/) + [Playwright](https://playwright.dev/)                                                       |
+| 代码格式化 | [Prettier](https://prettier.io/)                                                                                            |
+| 代码检查   | [ESLint](https://eslint.org)                                                                                                |
 
 ## 本地运行
 
@@ -92,27 +93,30 @@ pnpm run dev
 
 所有命令在项目根目录下执行：
 
-| 命令                             | 说明                                           |
-| :------------------------------- | :--------------------------------------------- |
-| `pnpm install --frozen-lockfile` | 安装依赖（锁定版本）                           |
-| `pnpm run dev`                   | 启动本地开发服务器（`localhost:4321`）         |
-| `pnpm run build`                 | astro check → 构建 → Pagefind → 复制索引       |
-| `pnpm run preview:cloudflare`    | 用 Wrangler 预览构建产物（含本地 KV）          |
-| `pnpm run test`                  | 纯逻辑/协议/门禁/鉴权测试                      |
-| `pnpm run test:worker`           | Worker 集成测试（workerd + 本地 KV）           |
-| `pnpm run test:e2e`              | Playwright 烟囱验收（需先 build 并安装浏览器） |
-| `pnpm run check:artifact`        | 产物检查（草稿/secret/管理页未静态化）         |
-| `pnpm run check:routes`          | SSR 路由清单检查                               |
-| `pnpm run format`                | 使用 Prettier 格式化代码                       |
-| `pnpm run lint`                  | 使用 ESLint 检查代码                           |
+| 命令                             | 说明                                                            |
+| :------------------------------- | :-------------------------------------------------------------- |
+| `pnpm install --frozen-lockfile` | 安装依赖（锁定版本）                                            |
+| `pnpm run dev`                   | 启动本地开发服务器（`localhost:4321`）                          |
+| `pnpm run build`                 | astro check → 构建 → Pagefind → 复制索引                        |
+| `pnpm run preview:cloudflare`    | 用 Wrangler 预览构建产物（含本地 KV）                           |
+| `pnpm run test`                  | 纯逻辑/协议/门禁/鉴权测试                                       |
+| `pnpm run test:worker`           | Worker 集成测试（workerd + 本地 KV）                            |
+| `pnpm run test:e2e`              | Playwright 烟囱验收（需先 build 并安装浏览器）                  |
+| `pnpm run typecheck`             | Astro + Sync Worker TypeScript 类型检查                         |
+| `pnpm run check:artifact`        | 产物检查（草稿/secret/管理页未静态化）                          |
+| `pnpm run check:routes`          | SSR 路由清单检查                                                |
+| `pnpm run verify:all`            | 按 CI 顺序运行 lint、类型、单测、Worker、构建、产物、路由和 e2e |
+| `pnpm run format`                | 使用 Prettier 格式化代码                                        |
+| `pnpm run lint`                  | 使用 ESLint 检查代码                                            |
 
 ## 部署与运维
 
-部署配置（`wrangler.jsonc` 与 `workers/portfolio-sync/wrangler.jsonc`）中的项目名、KV namespace ID、Access 值为占位符，必须由拥有 Cloudflare 权限的操作者按以下文档填写与上线：
+部署配置（`wrangler.jsonc` 与 `workers/portfolio-sync/wrangler.jsonc`）只提交绑定名称、非敏感运行约定和环境隔离规则；namespace ID、Access 配置和 secret 的最终值由有权限的操作者在对应环境核对。任何 token、CSRF secret、验证码或其他凭据都不得提交：
 
 - [`docs/portfolio/deployment.md`](docs/portfolio/deployment.md) — 部署配置与上线顺序
 - [`docs/portfolio/runbook.md`](docs/portfolio/runbook.md) — 日常运维、故障处理与回滚
 - [`docs/portfolio/protocol-v1.md`](docs/portfolio/protocol-v1.md) — 作品增强配置协议 v1
+- [`docs/portfolio/acceptance-matrix.md`](docs/portfolio/acceptance-matrix.md) — 可重复验收矩阵与已知缺口
 
 ## 写作规范
 

@@ -19,6 +19,7 @@ export type ProjectPlatform =
 export interface ProjectCover {
   src: string;
   alt: string;
+  caption?: string;
   width?: number;
   height?: number;
 }
